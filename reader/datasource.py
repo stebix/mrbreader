@@ -55,7 +55,7 @@ class DicomStack(AbstractDataSource):
         """
         if not isinstance(filepath, pathlib.Path):
             filepath = pathlib.Path(filepath)
-        return self.check_pre_suf(string=filepath.name, candidate='raw')
+        return self.check_affinity(string=filepath.name, candidate='raw')
 
     
     def is_label(self, filepath: PathLike) -> bool:
@@ -65,7 +65,7 @@ class DicomStack(AbstractDataSource):
         """
         if not isinstance(filepath, pathlib.Path):
             filepath = pathlib.Path(filepath)
-        return self.check_pre_suf(string=filepath.name, candidate='label')
+        return self.check_affinity(string=filepath.name, candidate='label')
 
 
     def is_weight(self, filepath: PathLike) -> bool:
@@ -74,14 +74,17 @@ class DicomStack(AbstractDataSource):
         """
         if not isinstance(filepath, pathlib.Path):
             filepath = pathlib.Path(filepath)
-        return self.check_pre_suf(string=filepath.name, candidate='label')
+        return self.check_affinity(string=filepath.name, candidate='weight')
 
 
     @staticmethod
-    def check_pre_suf(string: str, candidate: str) -> bool:
+    def check_affinity(string: str, candidate: str) -> bool:
         """
-        Check if the given string starts or ends with the provided
-        candidate string.
+        Check if the given string (probably a filename) indicates affinity to
+        a certain category that is encoded by the candidate string.
+
+        Currently simplistic start or end checking is employed.
+        Maybe regex stuff later ...?
         """
         if string.endswith(candidate) or string.endswith(candidate):
             return True
