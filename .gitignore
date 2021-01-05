@@ -1,3 +1,9 @@
+# project specific 3D Slicer data sources
+*.mrb
+*.nrrd
+*.mrmrl
+*.png
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
