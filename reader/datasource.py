@@ -3,6 +3,7 @@ import logging
 import numpy as np
 import pydicom
 
+from collections.abc import Iterable
 from typing import Union, Dict, List, Tuple
 
 
@@ -99,7 +100,6 @@ class DicomStack(AbstractDataSource):
         them into a numpy array.
         The DICOM files are stacked along the first axis.
 
-
         Parameters
         ----------
 
@@ -113,6 +113,10 @@ class DicomStack(AbstractDataSource):
         image_volume : numpy.ndarray
             The loaded DICOM stack as a numpy array.
         """
+        # wrap list to enable single element loading
+        if not isinstance(filepaths, Iterable):
+            filepaths = [filepaths]
+
         dicom_suffices = ['dcm', 'DCM', 'DICOM', 'dicom', 'dic']
         dcm_file_dsets = []
         for entry in filepaths:
@@ -125,6 +129,11 @@ class DicomStack(AbstractDataSource):
                     continue
 
                 dcm_file_dsets.append(file_dset)
+
+        if dcm_file_dsets is None:
+            # somehow none of the given files could be identified/parsed
+            # as a valid DICOM file, we communicate this explicitly
+            raise RuntimeError('Unable to parse any of the files as DICOM')
 
         # stack raw voxel data to numpy array 
         image_volume = np.stack(
