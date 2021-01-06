@@ -1,7 +1,7 @@
 # project specific 3D Slicer data sources
 *.mrb
 *.nrrd
-*.mrmrl
+*.mrml
 *.png
 
 # Byte-compiled / optimized / DLL files
