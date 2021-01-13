@@ -6,26 +6,11 @@ import numpy as np
 
 import nrrd
 
-from typing import Union, Dict, List, Any, Tuple
+from typing import Union, Dict, List, Any, Tuple, Callable, Iterable
 from PIL import Image
 
 PathLike = Union[str, pathlib.Path]
-
-
-class TaggedData:
-
-    def __init__(self, data: np.ndarray, metadata: Any) -> None:
-        self.data = data
-        self.metadata = metadata
-
-
-class RawData(TaggedData):
-    pass
-
-
-class SegmentationData(TaggedData):
-    pass
-
+ZipMember = Union[str, zpf.ZipInfo]
 
 
 
@@ -49,7 +34,8 @@ class MRBFile(zpf.ZipFile):
             (raising FileExistsError if `filepath` preexists)
         Defaults to 'r'.
 
-    compression : str, optional
+    compression : int, optional
+        Numerical compression constants defined by the zipfile package.
         ZIP compression method used when writing to the archive.
         Should be ZIP_STORED, ZIP_DEFLATED, ZIP_BZIP2 or ZIP_LZMA
         Defaults to ZIP_STORED
@@ -74,7 +60,6 @@ class MRBFile(zpf.ZipFile):
         self.filepath = filepath
         
         data_members = self.get_data_members()
-
         self.raw_members = data_members['raw']
         self.segmentation_members = data_members['seg']
 
@@ -93,9 +78,10 @@ class MRBFile(zpf.ZipFile):
         Returns
         -------
 
-        data_members : Dict
+        data_members : Dict[str, List]
             Dict with keys 'raw' and 'seg' that hold
             the member lists as values.
+            The member lists consist of zipfile.ZipInfo objects.
         """
         segmentation_members = []
         raw_members = []
@@ -111,30 +97,58 @@ class MRBFile(zpf.ZipFile):
 
     def get_raws(self) -> List[Tuple]:
         """
-        Return list of raw
-        """
-        raws = []
-        for raw_member in self.raw_members:
-            tagged_raw_data = self.read_nrrd(raw_member)
-            raws.append(tagged_raw_data)
+        Return list of parsed raw data members of the MRB file.
+        From the zip-internal file, the raw data and corresponding
+        raw metadata is processed into tuples
+        (data, metadata) - Tuple[np.ndarray, OrderedDict]
 
-        return raws
+        Returns
+        -------
+
+        raws : List[Tuple]
+            The list of tuples of parsed raw data members.
+            Form: (data, metadata)
+        """
+        local_read_fn = self.read_nrrd
+        return self._read_members(self.raw_members, local_read_fn)
+
 
     
     def get_segmentations(self) -> List[Tuple]:
         """
-        Return list of segmentations
+        Return list of segmentation data members of the MRB file.
+        From the zip-internal file, the segmentation data and corresponding
+        segmentation metadata is processed into tuples
+        (data, metadata) - Tuple[np.ndarray, OrderedDict]
+
+        Returns
+        -------
+
+        raws : List[Tuple]
+            The list of tuples of parsed raw data members.
+            Form: (data, metadata)
+
         """
-        segmentations = []
-        for seg_member in self.segmentation_members:
-            tagged_seg_data = self.read_nrrd(seg_member)
-            segmentations.append(tagged_seg_data)
-            
-        return segmentations
+        local_read_fn = self.read_nrrd
+        return self._read_members(self.segmentation_members, local_read_fn)
     
 
+    def _read_members(self,
+                      members: Iterable[ZipMember],
+                      read_fn: Callable[[ZipMember], Tuple]) -> List[Tuple]:
+        """
+        Read elements from the members iterable with the read_fn callable and
+        return results as a list.
+        """
+        member_data_list =  []
+        for member in members:
+            member_data = read_fn(member)
+            member_data_list.append(member_data)
+        return member_data_list
+
+    
     def read_nrrd(self,
-                  member: Union[str, zpf.ZipInfo]) -> Tuple[np.ndarray, collections.OrderedDict]:
+                  member: ZipMember) -> Tuple[np.ndarray, collections.OrderedDict]:
         """
         Access, load and transform NRRD file member of the MRB file into
         a numpy ndarray.
@@ -157,6 +171,16 @@ class MRBFile(zpf.ZipFile):
         header = nrrd.read_header(member_fobj)
         data = nrrd.read_data(header, fh=member_fobj)
         return (data, header)
+
+    
+    def read_nii(self,
+                 member: ZipMember) -> Tuple[np.ndarray, collections.OrderedDict]:
+        """
+        NII file read method.
+        """ 
+        raise NotImplementedError
+    
+
 
         
 
