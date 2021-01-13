@@ -17,10 +17,29 @@ class TaggedArray:
     and heterogenous metadata (mostly dictionaries) living in the
     metadata attribute.
     """
+    long_repr = False
 
     def __init__(self, data: np.ndarray, metadata: Any) -> None:
         self.data = data
         self.metadata = metadata
+    
+
+    def __repr__(self) -> str:
+        """
+        Provide a nice instance representation string.
+        The length/degree of detail can be switched via the class variable
+        `long_repr`.
+        """
+        if self.long_repr:
+            attr_repr = 'arrshape={}, metadata={}'.format(self.data.shape, self.metadata)
+        else:
+            attr_repr = 'arrshape={}, metadata_type={}'.format(self.data.shape,
+                                                               type(self.metadata))
+        repr_str = '{}({})'.format(
+            self.__class__.__name__,
+            attr_repr
+        )
+        return repr_str
 
 
 class RawData(TaggedArray):
@@ -113,7 +132,7 @@ class SegmentInfo:
         self.tags = tags
 
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         # string repr sequence of selected attributes
         attr_kv_seq = ', '.join(
             ('{}={}'.format(name, getattr(self, name))
