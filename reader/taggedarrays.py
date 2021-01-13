@@ -44,11 +44,33 @@ class SegmentationData(TaggedArray):
     def __init__(self, data: np.ndarray, metadata: Any) -> None:
         super(SegmentationData, self).__init__(data, metadata)
 
+        # creates the per-segment metadata information as `SegmentInfo` instances
+        # the attribute is layed out as a dict with the label_value of the
+        # segment as the key and the `SegmentInfo` as the value
+        self.seginfos = dict(
+            (si.label_value, si) for si in SegmentInfo.from_header(metadata)
+        )
         self._check_consistency()
     
 
     def _check_consistency(self) -> None:
-        pass
+        """Run some sanity checks that metadata and numerical data are consistent"""
+        lbl_vals_from_metadata = set(self.seginfos.keys())
+        lbl_vals_from_data = set(np.unique(self.data))
+        symm_diff = lbl_vals_from_data ^ lbl_vals_from_metadata
+
+        if len(symm_diff) != 0:
+            msg = (f'Label mismatch between data and metadata! Expected vanishing '
+                   f'symmetric difference but got: {symm_diff}')
+            raise ValueError(msg)
+    
+
+    def __getitem__(self, label_value: int) -> SegmentInfo:
+        """
+        Directly retrieve the segment label information (as a SegmentInfo object)
+        via its integer label value that is used as a index here.
+        """
+        return self.seginfos[label_value]
 
 
 
@@ -122,10 +144,7 @@ class SegmentInfo:
                 (key, getattr(self, value))
                 for key, value in self.slicer_to_internal_alias.items()
             )
-
         return obj_dict
-
-
 
 
     @property
@@ -153,7 +172,6 @@ class SegmentInfo:
         
         self._color = tuple(c_checked)
         
-
 
     @classmethod
     def from_header(cls,
@@ -184,6 +202,7 @@ class SegmentInfo:
                 segment_attrs[segment_id][attr_name] = value
         
         return [cls(**kwargs) for kwargs in segment_attrs.values()]
+
 
 
 
