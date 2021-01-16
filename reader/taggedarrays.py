@@ -3,12 +3,48 @@ import re
 import collections
 import numpy as np
 
-from typing import Dict, List, Tuple, Iterable, Any
+from typing import Dict, List, Tuple, Iterable, Any, Union
 
 """
 The parsing of files originating from the manual segmentation process
 comes with a lot of metadata processing.
 """
+
+
+def homogenize(segmentation_data_list: List) -> None:
+    """
+    Homogenize segment label_value and naming schemes that might differ
+    due to varying individual segmentation schemes.
+    """
+    pass
+
+
+def relabel(label_array: np.ndarray,
+            old: Union[int, Iterable[int]],
+            new: Union[int, Iterable[int]]) -> np.ndarray:
+    """
+    Re-label an array by replacing all occurrences of the old
+    label with the new label.
+    """
+    if not isinstance(old, Iterable):
+        old = [old]
+    if not isinstance(new, Iterable):
+        new = [new]
+
+    # sanity checking
+    assert len(old) == len(new), f'Every old label needs a new replacement!'
+    int_like = (np.int8, np.int16, np.int32, np.int64,
+                np.uint8, np.uint16, np.uint32, np.uint64)
+    assert label_array.dtype in int_like, f'Non-integer label array! Dtype: {label_array.dtype}'
+
+    relabeled_array = np.zeros_like(label_array)
+
+    relabeled_array = np.copy(label_array)
+
+    for o, n in zip(old, new):
+        relabeled_array[label_array == o] = n
+    
+    return relabeled_array
 
 
 class TaggedArray:
@@ -69,13 +105,18 @@ class SegmentationData(TaggedArray):
         self.seginfos = dict(
             (si.label_value, si) for si in SegmentInfo.from_header(metadata)
         )
+        # TODO: this is sloooow due to numpy.unique!
         self._check_consistency()
     
 
     def _check_consistency(self) -> None:
         """Run some sanity checks that metadata and numerical data are consistent"""
         lbl_vals_from_metadata = set(self.seginfos.keys())
+        # background with label_value 0 is generally not included in metadata dict
+        lbl_vals_from_metadata.add(0)
         lbl_vals_from_data = set(np.unique(self.data))
+        # TODO: check if numerical datatype shenanigans ruin the day
+        # i.e. something along the lines of 1.0 != 1
         symm_diff = lbl_vals_from_data ^ lbl_vals_from_metadata
 
         if len(symm_diff) != 0:
@@ -84,12 +125,16 @@ class SegmentationData(TaggedArray):
             raise ValueError(msg)
     
 
-    def __getitem__(self, label_value: int) -> SegmentInfo:
+    def __getitem__(self, label_value: int) -> 'SegmentInfo':
         """
         Directly retrieve the segment label information (as a SegmentInfo object)
         via its integer label value that is used as a index here.
         """
         return self.seginfos[label_value]
+
+    
+    def __repr__(self) -> str:
+        raise NotImplementedError('Implement this, son!')
 
 
 
@@ -167,7 +212,7 @@ class SegmentInfo:
 
 
     @property
-    def color(self) -> None:
+    def color(self) -> Tuple[float]:
         return self._color
     
 
@@ -190,7 +235,24 @@ class SegmentInfo:
             c_checked.append(val)
         
         self._color = tuple(c_checked)
+
+    @property
+    def label_value(self) -> int:
+        return self._label_value
+    
+
+    @label_value.setter
+    def label_value(self, new_label_value: int) -> None:
+        """
+        Managed attribute setter for label_value, which
+        is expected to be an integer.
+        """
+        if not isinstance(new_label_value, int):
+            new_label_value = int(new_label_value)
         
+        self._label_value = new_label_value
+
+
 
     @classmethod
     def from_header(cls,
@@ -237,14 +299,18 @@ if __name__ == '__main__':
     data, header = mrb.get_segmentations()[0]
 
     sis = SegmentInfo.from_header(header)
-
     print(sis[1].color)
-
     for s in sis:
         print(s)
-    
-    print(s.to_dict())
-    print(s.to_dict('slicer'))
+
+
+    segdat = SegmentationData(data, header)
+
+
+    rlb = relabel(segdat.data, 0, 1234)
+
+    print(np.unique(rlb))
+
 
 
     
