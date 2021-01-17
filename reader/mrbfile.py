@@ -151,7 +151,7 @@ class MRBFile(zpf.ZipFile):
                   member: ZipMember) -> Tuple[np.ndarray, collections.OrderedDict]:
         """
         Access, load and transform NRRD file member of the MRB file into
-        a numpy ndarray.
+        a numpy ndarray and corresponding header metadata.
         Accessed member is specified via string or ZipInfo instance.
 
         Parameters
