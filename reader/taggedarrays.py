@@ -32,13 +32,13 @@ class TaggedArray:
         `long_repr`.
         """
         if self.long_repr:
-            attr_repr = 'arrshape={}, arrdtype={}, metadata={}'.format(self.data.shape,
-                                                                       self.data.dtype,
-                                                                       self.metadata)
+            attr_repr = 'arr_shape={}, arr_dtype={}, metadata={}'.format(self.data.shape,
+                                                                         self.data.dtype,
+                                                                         self.metadata)
         else:
-            attr_repr = 'arrshape={}, arrdtype={}, metadata_type={}'.format(self.data.shape,
-                                                                            self.data.dtype,
-                                                                            type(self.metadata))
+            attr_repr = 'arr_shape={}, arr_dtype={}, metadata_type={}'.format(self.data.shape,
+                                                                              self.data.dtype,
+                                                                              type(self.metadata))
         repr_str = '{}({})'.format(
             self.__class__.__name__,
             attr_repr
@@ -102,7 +102,19 @@ class SegmentationData(TaggedArray):
 
     
     def __repr__(self) -> str:
-        raise NotImplementedError('Implement this, son!')
+        arr_info_str = 'arr_shape={}, arr_dtype={}'.format(self.data.shape,
+                                                         self.data.dtype)
+        segment_info = []
+        for seginfo_elem in self.infos.values():
+            segment_info.append(
+                '({}, {})'.format(seginfo_elem.name, seginfo_elem.label_value)
+            )        
+        seg_info_str = 'segment_count={}, segments=[{}]'.format(
+            len(segment_info), ', '.join(segment_info)
+        )
+        repr_str = '{}({})'.format(self.__class__.__name__,
+                                   ', '.join((arr_info_str, seg_info_str)))
+        return repr_str
 
 
 

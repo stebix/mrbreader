@@ -1,5 +1,5 @@
 import pathlib
-from reader import MRBFile
+from mrbfile import MRBFile
 from taggedarrays import SegmentInfo, SegmentationData
 
 
@@ -13,9 +13,14 @@ print(mrb.raw_members)
 
 
 print('Reading segmentations')
-segdata_arr, segheader = mrb.read_segmentations()[0]
+segdata = mrb.read_segmentations()[0]
 
-segdata = SegmentationData(segdata_arr, segheader)
+
+print(segdata)
+
+raise Exception
+
+
 print('SegmentationData seginfos dict:')
 for k, v in segdata.seginfos.items():
     print(f'Key: {k}  -  value {v}')
