@@ -67,11 +67,11 @@ class SegmentationData(TaggedArray):
         # creates the per-segment metadata information as `SegmentInfo` instances
         # the attribute is layed out as a dict with the label_value of the
         # segment as the key and the `SegmentInfo` as the value
-        self.seginfos = dict(
-            (si.label_value, si) for si in SegmentInfo.from_header(metadata)
-        )
+        self.seginfos = {
+            si.label_value : si for si in SegmentInfo.from_header(metadata)
+        }
         # TODO: this is sloooow due to numpy.unique!
-        self._check_consistency()
+        # self._check_consistency()
     
 
     def _check_consistency(self) -> None:
@@ -121,9 +121,9 @@ class SegmentInfo:
         'Tags' : 'tags'
     }
     # reversed mapping
-    internal_to_slicer_alias = dict(
-        ((value, key) for key, value in slicer_to_internal_alias.items())
-    )
+    internal_to_slicer_alias =  {
+        value : key for key, value in slicer_to_internal_alias.items()
+    }
     # fields for the __repr__ dunder method
     repr_field_names = ['name', 'label_value', 'color', 'ID']
 
@@ -164,15 +164,15 @@ class SegmentInfo:
             raise ValueError(msg)
         
         if keystyle == 'internal':
-            obj_dict = dict(
-                (key, getattr(self, key))
+            obj_dict = {
+                key : getattr(self, key)
                 for key in self.internal_to_slicer_alias.keys()
-            )
+            }
         else:
-            obj_dict = dict(
-                (key, getattr(self, value))
+            obj_dict = {
+                key : getattr(self, value)
                 for key, value in self.slicer_to_internal_alias.items()
-            )
+            }
         return obj_dict
 
 
