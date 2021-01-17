@@ -70,7 +70,7 @@ class SegmentationData(TaggedArray):
         # creates the per-segment metadata information as `SegmentInfo` instances
         # the attribute is layed out as a dict with the label_value of the
         # segment as the key and the `SegmentInfo` as the value
-        self.seginfos = {
+        self.infos = {
             si.label_value : si for si in SegmentInfo.from_header(metadata)
         }
         # TODO: this is sloooow due to numpy.unique!
@@ -79,7 +79,7 @@ class SegmentationData(TaggedArray):
 
     def _check_consistency(self) -> None:
         """Run some sanity checks that metadata and numerical data are consistent"""
-        lbl_vals_from_metadata = set(self.seginfos.keys())
+        lbl_vals_from_metadata = set(self.infos.keys())
         # background with label_value 0 is generally not included in metadata dict
         lbl_vals_from_metadata.add(0)
         lbl_vals_from_data = set(np.unique(self.data))
@@ -98,7 +98,7 @@ class SegmentationData(TaggedArray):
         Directly retrieve the segment label information (as a SegmentInfo object)
         via its integer label value that is used as a index here.
         """
-        return self.seginfos[label_value]
+        return self.infos[label_value]
 
     
     def __repr__(self) -> str:
