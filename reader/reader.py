@@ -59,12 +59,12 @@ class MRBFile(zpf.ZipFile):
         assert filepath.is_file(), f'MRB file at {filepath.resolve()} not found!'
         self.filepath = filepath
         
-        data_members = self.get_data_members()
+        data_members = self.get_member_info()
         self.raw_members = data_members['raw']
         self.segmentation_members = data_members['seg']
 
 
-    def get_data_members(self):
+    def get_member_info(self):
         """
         Get the dict of ZipInfo instances that describe data members of the ZipFile.
         The members are subdivided between raw data members and segmentation members
@@ -95,7 +95,7 @@ class MRBFile(zpf.ZipFile):
         return {'raw' : raw_members, 'seg' : segmentation_members}
     
 
-    def get_raws(self) -> List[Tuple]:
+    def read_raws(self) -> List[Tuple]:
         """
         Return list of parsed raw data members of the MRB file.
         From the zip-internal file, the raw data and corresponding
@@ -114,7 +114,7 @@ class MRBFile(zpf.ZipFile):
 
 
     
-    def get_segmentations(self) -> List[Tuple]:
+    def read_segmentations(self) -> List[Tuple]:
         """
         Return list of segmentation data members of the MRB file.
         From the zip-internal file, the segmentation data and corresponding
@@ -210,7 +210,7 @@ if __name__ == '__main__':
 
     testmrb = MRBFile(testfile_path)
 
-    data, metadata = testmrb.get_segmentations()[0]
+    data, metadata = testmrb.read_segmentations()[0]
 
     print(data.shape)
     print(metadata)
