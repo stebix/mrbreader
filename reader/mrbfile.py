@@ -9,6 +9,8 @@ import nrrd
 from typing import Union, Dict, List, Any, Tuple, Callable, Iterable
 from PIL import Image
 
+from taggedarrays import RawData, SegmentationData
+
 PathLike = Union[str, pathlib.Path]
 ZipMember = Union[str, zpf.ZipInfo]
 
@@ -95,42 +97,45 @@ class MRBFile(zpf.ZipFile):
         return {'raw' : raw_members, 'seg' : segmentation_members}
     
 
-    def read_raws(self) -> List[Tuple]:
+    def read_raws(self) -> List[RawData]:
         """
         Return list of parsed raw data members of the MRB file.
         From the zip-internal file, the raw data and corresponding
-        raw metadata is processed into tuples
-        (data, metadata) - Tuple[np.ndarray, OrderedDict]
+        raw metadata is processed into RawData tagged array objects.
 
         Returns
         -------
 
-        raws : List[Tuple]
-            The list of tuples of parsed raw data members.
-            Form: (data, metadata)
+        raws : List[RawData]
+            The list of RawData tagged array objects of parsed raw data members.
+            RawData attributes: data, metadata
         """
         local_read_fn = self.read_nrrd
-        return self._read_members(self.raw_members, local_read_fn)
+        # below raw_datas is list of tuples 
+        # (data, metadata) - (np.ndarray, collections.OrderedDict)
+        raw_datas = self._read_members(self.raw_members, local_read_fn)
+        return [RawData(*elem) for elem in raw_datas]
 
 
     
-    def read_segmentations(self) -> List[Tuple]:
+    def read_segmentations(self) -> List[SegmentationData]:
         """
         Return list of segmentation data members of the MRB file.
         From the zip-internal file, the segmentation data and corresponding
-        segmentation metadata is processed into tuples
-        (data, metadata) - Tuple[np.ndarray, OrderedDict]
+        segmentation metadata is processed into Segmentations data tagged
+        array instances.
 
         Returns
         -------
 
-        raws : List[Tuple]
-            The list of tuples of parsed raw data members.
-            Form: (data, metadata)
+        raws : List[SegmentationData]
+            The list of tuples of parsed segmentation data members.
+            SegmentationData attributes: data, metadata, infos
 
         """
         local_read_fn = self.read_nrrd
-        return self._read_members(self.segmentation_members, local_read_fn)
+        segmentation_datas = self._read_members(self.segmentation_members, local_read_fn)
+        return [SegmentationData(*elem) for elem in segmentation_datas]
     
 
     def _read_members(self,
