@@ -181,9 +181,31 @@ class SegmentInfo:
             return self.ID == other.ID
 
 
-    def to_dict(self, keystyle='internal') -> Dict:
+    def to_dict(self, keystyle='internal', prefix='') -> Dict:
         """
         Turn/devolve the object into a dictionary (Python primitive).
+
+        Parameters
+        ----------
+
+        keystyle : str, optional
+            Determines the styling of the keys in the returned dict.
+            May be 'internal' (yielding pretty snake_case keys)
+            or 'slicer' (yielding ugly CamelCase keys)
+            Defaults to 'internal'
+        
+        prefix : str, optional
+            Optional prefix prepended to the keys. Only active for
+            'slicer' keystyle. May be used to prepend the Slicer-
+            internal 'SegmentN_' to the keys.
+            Defaults to '' (empty string)
+        
+        Returns
+        -------
+
+        obj_dict : dict
+            The SegmentInfo instance as a Python-primitive
+            dictionary
         """
         if keystyle not in ('internal', 'slicer'):
             msg = f'Unrecognized keystyle: {keystyle}'
@@ -196,7 +218,7 @@ class SegmentInfo:
             }
         else:
             obj_dict = {
-                key : getattr(self, value)
+                ''.join((prefix, key)) : getattr(self, value)
                 for key, value in self.slicer_to_internal_alias.items()
             }
         return obj_dict
