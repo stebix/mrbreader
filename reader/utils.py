@@ -34,7 +34,7 @@ def relabel(label_array: np.ndarray,
                 np.uint8, np.uint16, np.uint32, np.uint64)
     assert label_array.dtype in int_like, f'Non-integer label array! Dtype: {label_array.dtype}'
 
-    relabeled_array = np.zeros_like(label_array)
+    # relabeled_array = np.zeros_like(label_array)
     relabeled_array = np.copy(label_array)
     for o, n in zip(old, new):
         relabeled_array[label_array == o] = n

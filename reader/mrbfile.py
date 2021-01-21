@@ -9,7 +9,7 @@ import nrrd
 from typing import Union, Dict, List, Any, Tuple, Callable, Iterable
 from PIL import Image
 
-from taggedarrays import RawData, SegmentationData
+from tagged_data import RawData, SegmentationData
 
 PathLike = Union[str, pathlib.Path]
 ZipMember = Union[str, zpf.ZipInfo]
