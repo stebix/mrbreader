@@ -12,7 +12,7 @@ comes with a lot of metadata processing.
 """
 
 
-class TaggedArray:
+class TaggedData:
     """
     Minimal wrapper class for numpy.ndarrays living in the data attribute
     and heterogenous metadata (mostly dictionaries) living in the
@@ -40,21 +40,21 @@ class TaggedArray:
                                                                               self.data.dtype,
                                                                               type(self.metadata))
         repr_str = '{}({})'.format(
-            self.__class__.__name__,
+            self.TaggedData.__name__,
             attr_repr
         )
         return repr_str
 
 
-class RawData(TaggedArray):
+class RawData(TaggedData):
     """
     Tagged CT raw data.
-    Usually just a 3D scalar numpy array (data) and an OrderedDict (metadata).
+    Usually just a 3D scalar NumPy array (data) and an OrderedDict (metadata).
     """
     pass
 
 
-class SegmentationData(TaggedArray):
+class SegmentationData(TaggedData):
     """
     Tagged segmentation data.
 
