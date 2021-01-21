@@ -1,6 +1,6 @@
 import pathlib
 from mrbfile import MRBFile
-from taggedarrays import SegmentInfo, SegmentationData
+from tagged_data import SegmentInfo, SegmentationData
 
 
 jh_manseg_fpath = 'G:/Cochlea/Data_TPL_Library/johannes_manual_segmentation/44.mrb'
@@ -20,9 +20,15 @@ segdata = mrb.read_segmentations()[0]
 
 rawdata = mrb.read_raws()[0]
 
-print(rawdata.metadata)
+# print(rawdata.metadata)
 
-print(segdata.metadata)
+
+for key, val in segdata.metadata.items():
+    print(f'Key: {key}')
+    print(f'{val}\n')
+
+
+# print(segdata.metadata)
 
 raise Exception
 

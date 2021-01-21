@@ -168,7 +168,18 @@ class SegmentInfo:
             attr_kv_seq
         )
         return repr_str
+
     
+    def __eq__(self, other) -> bool:
+        """Dunder comparison method."""
+        # TODO: We got to think about the case: When do SegmentInfo
+        # objects represent the same thing? When label values are identical?
+        # Or when additional fields are equal?
+        if not isinstance(other, SegmentInfo):
+            return NotImplemented
+        else:
+            return self.ID == other.ID
+
 
     def to_dict(self, keystyle='internal') -> Dict:
         """
@@ -215,6 +226,7 @@ class SegmentInfo:
             c_checked.append(val)
         
         self._color = tuple(c_checked)
+
 
     @property
     def label_value(self) -> int:
