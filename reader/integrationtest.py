@@ -18,13 +18,16 @@ print(mrb.raw_members)
 print('Reading segmentations')
 segdata = mrb.read_segmentations()[0]
 
+segdata.rename(1, 'utziwutzi')
+segdata.relabel(1, 234)
+
 rawdata = mrb.read_raws()[0]
 
 # print(rawdata.metadata)
 
 
 for key, val in segdata.metadata.items():
-    print(f'Key: {key}')
+    print(f'{key}')
     print(f'{val}\n')
 
 

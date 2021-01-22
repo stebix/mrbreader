@@ -120,6 +120,7 @@ class SegmentationData(TaggedData):
     def relabel(self, old: int, new: int) -> None:
         """
         Change the integer label value of a segment.
+        The new label must not be an existing label.
         Via this method, the change is reflected in the data array and the
         metadata attribute dict.
 
@@ -132,8 +133,12 @@ class SegmentationData(TaggedData):
         new : int
             The corresponding new label value.
         """
-        msg = f'Expecting integer arguments, got {type(old)} and {type(new)}!'
-        assert isinstance(old, int) and isinstance(new, int), msg
+        if not (isinstance(old, int) and isinstance(new, int)):
+            msg = f'Expecting integer arguments, got {type(old)} and {type(new)}!'
+            raise ValueError(msg)
+        if new in set(self.infos.keys()):
+            msg = f'New label  < {new} > is in existing labels {set(self.infos.keys())}!'
+            raise ValueError(msg)
         # modify corresponding SegmentInfo object
         seginfo = self.infos[old]
         seginfo.label_value = new
@@ -194,7 +199,7 @@ class SegmentationData(TaggedData):
         """
         # update the keys that is the integer label_value of the SegmentInfo
         self.infos = {
-            si.label_value : si for si in self.infos
+            si.label_value : si for si in self.infos.values()
         }
         for idx, seginfo in enumerate(self.infos.values()):
             prefix = f'Segment{idx}_'
