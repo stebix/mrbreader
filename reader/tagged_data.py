@@ -142,9 +142,37 @@ class SegmentationData(TaggedData):
         # modify corresponding SegmentInfo object
         seginfo = self.infos[old]
         seginfo.label_value = new
+        # modify array data
+        self.data = relabel(self.data, old, new)
         # propagate state changes
         self._update_state_from_infos()
 
+
+    def swaplabel(self, label_a: int, label_b: int) -> None:
+        """
+        Swap the integer labels of two segments.
+
+        Parameters
+        ----------
+
+        label_a : int
+            The first label: is swapped to label_b
+        
+        label_b : int
+            The second label: is swapped to label_a
+        """
+        if not (isinstance(label_a, int) and isinstance(label_b, int)):
+            msg = f'Expecting integer arguments, got {type(label_a)} and {type(label_b)}!'
+            raise ValueError(msg)
+
+        self.infos[label_a].label_value = label_b
+        self.infos[label_b].label_value = label_a
+        labels = [label_a, label_b]
+        # modify array data
+        self.data = relabel(self.data, labels, reversed(labels))
+        # propagate state changes
+        self._update_state_from_infos()
+        
 
     def rename(self, label_value: int, new_name: str) -> None:
         """

@@ -1,5 +1,6 @@
 import numpy as np
 import collections
+import collections.abc
 
 from typing import List, Dict, Tuple, Union, Iterable, Any
 
@@ -98,16 +99,21 @@ def relabel(label_array: np.ndarray,
     Re-label an array by replacing all occurrences of the old
     label with the new label.
     """
-    if not isinstance(old, Iterable):
-        old = [old]
-    if not isinstance(new, Iterable):
-        new = [new]
-
-    # sanity checking
-    assert len(old) == len(new), f'Every old label needs a new replacement!'
     int_like = (np.int8, np.int16, np.int32, np.int64,
                 np.uint8, np.uint16, np.uint32, np.uint64)
     assert label_array.dtype in int_like, f'Non-integer label array! Dtype: {label_array.dtype}'
+    
+    as_iterables = []
+    for arg in [old, new]:
+        if not isinstance(arg, collections.abc.Iterable):
+            as_iterables.append([arg])
+        else:
+            as_iterables.append(tuple(arg))
+    
+    (old, new) = as_iterables
+
+    # sanity checking
+    assert len(old) == len(new), f'Every old label needs a new replacement!'
 
     # relabeled_array = np.zeros_like(label_array)
     relabeled_array = np.copy(label_array)

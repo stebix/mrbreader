@@ -19,7 +19,7 @@ print('Reading segmentations')
 segdata = mrb.read_segmentations()[0]
 
 segdata.rename(1, 'utziwutzi')
-segdata.relabel(1, 234)
+segdata.swaplabel(1, 2)
 
 rawdata = mrb.read_raws()[0]
 
