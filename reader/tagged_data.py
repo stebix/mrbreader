@@ -134,11 +134,17 @@ class SegmentationData(TaggedData):
             The corresponding new label value.
         """
         if not (isinstance(old, int) and isinstance(new, int)):
-            msg = f'Expecting integer arguments, got {type(old)} and {type(new)}!'
-            raise ValueError(msg)
+            try:
+                old = int(old)
+                new = int(new)
+            except ValueError:
+                msg = f'Expecting integer arguments, got {type(old)} and {type(new)}!'
+                raise ValueError(msg)
+
         if new in set(self.infos.keys()):
             msg = f'New label  < {new} > is in existing labels {set(self.infos.keys())}!'
             raise ValueError(msg)
+
         # modify corresponding SegmentInfo object
         seginfo = self.infos[old]
         seginfo.label_value = new
