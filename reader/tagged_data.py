@@ -116,6 +116,91 @@ class SegmentationData(TaggedData):
                                    ', '.join((arr_info_str, seg_info_str)))
         return repr_str
 
+    
+    def relabel(self, old: int, new: int) -> None:
+        """
+        Change the integer label value of a segment.
+        Via this method, the change is reflected in the data array and the
+        metadata attribute dict.
+
+        Parameters
+        ----------
+
+        old : int
+            The old label value.
+
+        new : int
+            The corresponding new label value.
+        """
+        msg = f'Expecting integer arguments, got {type(old)} and {type(new)}!'
+        assert isinstance(old, int) and isinstance(new, int), msg
+        # modify corresponding SegmentInfo object
+        seginfo = self.infos[old]
+        seginfo.label_value = new
+        # propagate state changes
+        self._update_state_from_infos()
+
+
+    def rename(self, label_value: int, new_name: str) -> None:
+        """
+        Change the name attribute of a segment. The segment is accessed via its
+        `label_value`. 
+
+        Parameters
+        ----------
+
+        label_value : int
+            The integer label value of the segment we want to rename.
+
+        new_name : str
+            The new name of the segment. 
+        """
+        seginfo = self.infos[label_value]
+        seginfo.name = new_name
+        # propagate state changes
+        self._update_state_from_infos()
+
+    
+    def recolor(self, label_value: int, color: Tuple[float, float, float]) -> None:
+        """
+        Change the color attribute of a segment.
+
+        Parameters
+        ----------
+
+        label_value : int
+            The integer label value of the segment we want to give
+            a new color attribute.
+        
+        color : 3-tuple of float
+            The RGB color tuple. Elements expected to be in [0, 1].
+        """
+        seginfo = self.infos[label_value]
+        seginfo.color = color
+        # propagate state changes
+        self._update_state_from_infos()
+
+
+    def _update_state_from_infos(self) -> None:
+        """
+        Update the `self` instance and the `self.metadata` collections.OrderedDict
+        (that is inferred from the raw data header) from the `self.infos` attribute.
+        There the `SegmentInfo` instances the nicely describe the individual segments
+        are stored.
+
+        We use this to method to ensure internal consitency after an interaction
+        with the `SegmentInfo` instances for modifications like renaming,
+        relabeling, etc. 
+        """
+        # update the keys that is the integer label_value of the SegmentInfo
+        self.infos = {
+            si.label_value : si for si in self.infos
+        }
+        for idx, seginfo in enumerate(self.infos.values()):
+            prefix = f'Segment{idx}_'
+            self.metadata.update(
+                seginfo.to_dict(keystyle='slicer', prefix=prefix)
+            )
 
 
 
@@ -221,6 +306,9 @@ class SegmentInfo:
                 ''.join((prefix, key)) : getattr(self, value)
                 for key, value in self.slicer_to_internal_alias.items()
             }
+            # for full symmetry we have to back-convert the color float tuple
+            # into a space-separated string
+            obj_dict[''.join((prefix, 'Color'))] = ' '.join(str(val) for val in self.color)
         return obj_dict
 
 
