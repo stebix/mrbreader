@@ -419,33 +419,4 @@ class SegmentInfo:
         
         return [cls(**kwargs) for kwargs in segment_attrs.values()]
 
-
-
-
-if __name__ == '__main__':
-
-    import pathlib
-    from reader import MRBFile
-
-    fpath = pathlib.Path('C:/Users/Jannik/Desktop/mrbreader/tests/assets/testmrb_multiseg.mrb')
-
-    mrb = MRBFile(fpath)
-
-    data, header = mrb.get_segmentations()[0]
-
-    sis = SegmentInfo.from_header(header)
-    print(sis[1].color)
-    for s in sis:
-        print(s)
-
-
-    segdat = SegmentationData(data, header)
-
-
-    rlb = relabel(segdat.data, 0, 1234)
-
-    print(np.unique(rlb))
-
-
-
     
