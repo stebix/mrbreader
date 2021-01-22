@@ -4,7 +4,7 @@ import collections
 import numpy as np
 
 from typing import Dict, List, Tuple, Iterable, Any, Union
-from utils import relabel
+from reader.utils import relabel
 
 """
 The parsing of files originating from the manual segmentation process
