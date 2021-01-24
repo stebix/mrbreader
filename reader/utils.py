@@ -20,6 +20,23 @@ def is_binary(array: np.ndarray) -> bool:
         return False
 
 
+def is_onehot(array: np.ndarray, axis: int = 0) -> bool:
+    """
+    Check if given array is one-hot along a given axis.
+    """
+    if not is_binary(array):
+        return False
+        
+    reduced_array = np.sum(array, axis=axis)
+    if np.allclose(reduced_array, 1):
+        return True
+    else:
+        return False
+
+
+
+
+
 def convert_to_intlabel(array: np.ndarray) -> np.ndarray:
     """
     Convert an onehot-encoded label array of the form (C x [... spatial ...])
@@ -102,7 +119,7 @@ def relabel(label_array: np.ndarray,
     int_like = (np.int8, np.int16, np.int32, np.int64,
                 np.uint8, np.uint16, np.uint32, np.uint64)
     assert label_array.dtype in int_like, f'Non-integer label array! Dtype: {label_array.dtype}'
-    
+
     as_iterables = []
     for arg in [old, new]:
         if not isinstance(arg, collections.abc.Iterable):
