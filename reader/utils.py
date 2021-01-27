@@ -26,11 +26,12 @@ def is_onehot(array: np.ndarray, axis: int = 0) -> bool:
     """
     if not is_binary(array):
         return False
-        
+
     reduced_array = np.sum(array, axis=axis)
     if np.allclose(reduced_array, 1):
         return True
     else:
+        print(f'max is {np.max(reduced_array)}')
         return False
 
 

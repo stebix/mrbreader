@@ -5,7 +5,9 @@ import pytest
 Unittests and integrationtest for the utils module.
 """
 
-from reader.utils import is_binary, convert_to_intlabel
+from reader.utils import (is_binary, is_onehot,
+                          convert_to_intlabel,
+                          convert_to_onehot)
 
 
 @pytest.mark.parametrize('dtype', [np.int, np.float32, np.int64])
@@ -39,7 +41,8 @@ class Test_convert_to_intlabel:
         n_c = (3,)
         shape = (10, 10, 10)
         array = np.random.default_rng().normal(size=n_c + shape)
-        onehot_array = np.zeros_like(array)
+        onehot_array = np.zeros(array.shape, dtype=np.int)
         onehot_array[np.argmax(array, axis=0), ...] = 1
 
+        assert is_binary(onehot_array)
         assert is_onehot(onehot_array)
