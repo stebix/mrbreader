@@ -68,7 +68,8 @@ def convert_to_intlabel(array: np.ndarray) -> np.ndarray:
     intlabel_array = np.zeros(contracted_shape, dtype=np.int)
     # zero stays zero: background
     for idx in range(1, array.shape[0]):
-        intlabel_array[array[idx, ...]] = idx
+        mask = array[idx, ...].astype(np.bool)
+        intlabel_array[mask] = idx
     return intlabel_array
     
 
