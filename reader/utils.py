@@ -33,11 +33,7 @@ def is_onehot(array: np.ndarray, axis: int = 0) -> bool:
     if np.allclose(reduced_array, 1):
         return True
     else:
-        print(f'max is {np.max(reduced_array)}')
         return False
-
-
-
 
 
 def convert_to_intlabel(array: np.ndarray) -> np.ndarray:
