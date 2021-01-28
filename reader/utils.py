@@ -14,7 +14,9 @@ def is_binary(array: np.ndarray) -> bool:
     Check if given array is binary. Performs a 'soft check',
     i.e. if all elements are clos to either 1 or 0.
     """
-    if np.all(np.logical_or(np.isclose(array, 1), np.isclose(array, 0))):
+    if array.dtype == np.bool:
+        return True
+    elif np.all(np.logical_or(np.isclose(array, 1), np.isclose(array, 0))):
         return True
     else:
         return False
