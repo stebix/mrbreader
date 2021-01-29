@@ -9,6 +9,9 @@ from typing import List, Dict, Tuple, Union, Iterable, Any
 Several utility functions and definitions
 """
 
+int_like_dtypes = (np.int8, np.int16, np.int32, np.int64,
+                   np.uint8, np.uint16, np.uint32, np.uint64)
+
 def is_binary(array: np.ndarray) -> bool:
     """
     Check if given array is binary. Performs a 'soft check',
@@ -92,6 +95,11 @@ def convert_to_onehot(array: np.ndarray) -> np.ndarray:
     onehot_array : numpy.ndarray
         The one-hot-encoded representation
     """
+    # enforce integer array argument for normal procedure
+    if array.dtype not in int_like_dtypes:
+        msg = f'Non-integer label array! Dtype: {array.dtype}'
+        raise ValueError(msg)
+
     labelvalues = np.unique(array)
     expanded_shape = (len(labelvalues),) + array.shape
     onehot_array = np.zeros(expanded_shape, dtype=np.int)
@@ -115,10 +123,11 @@ def relabel(label_array: np.ndarray,
     """
     Re-label an array by replacing all occurrences of the old
     label with the new label.
+    This is a pure function and thus produces a new array.
     """
-    int_like = (np.int8, np.int16, np.int32, np.int64,
-                np.uint8, np.uint16, np.uint32, np.uint64)
-    assert label_array.dtype in int_like, f'Non-integer label array! Dtype: {label_array.dtype}'
+    if label_array.dtype not in int_like_dtypes:
+        msg = f'Non-integer label array! Dtype: {label_array.dtype}'
+        raise ValueError(msg) 
 
     as_iterables = []
     for arg in [old, new]:
