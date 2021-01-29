@@ -11,21 +11,6 @@ from reader.utils import (is_binary, is_onehot,
                           relabel)
 
 
-@pytest.mark.parametrize('dtype', [np.int, np.float32, np.int64])
-def test_is_binary(dtype):
-    testshape = (10, 10, 10)
-    all_ones = np.ones(shape=testshape, dtype=dtype)
-    all_zeros = np.zeros(shape=testshape, dtype=dtype)
-    # test for homogenous base cases
-    assert is_binary(all_ones)
-    assert is_binary(all_zeros)
-    # test mixture
-    assert is_binary(np.stack([all_ones, all_zeros], axis=0))
-    # random array: may be binary by chance, but this is unlikely ;)
-    randarr = np.random.default_rng().normal(size=testshape)
-    assert not is_binary(randarr)
-
-
 @pytest.fixture
 def onehot_array():
     """
@@ -72,6 +57,20 @@ def label_array():
     )
     return test_array
 
+
+@pytest.mark.parametrize('dtype', [np.int, np.float32, np.int64])
+def test_is_binary(dtype):
+    testshape = (10, 10, 10)
+    all_ones = np.ones(shape=testshape, dtype=dtype)
+    all_zeros = np.zeros(shape=testshape, dtype=dtype)
+    # test for homogenous base cases
+    assert is_binary(all_ones)
+    assert is_binary(all_zeros)
+    # test mixture
+    assert is_binary(np.stack([all_ones, all_zeros], axis=0))
+    # random array: may be binary by chance, but this is unlikely ;)
+    randarr = np.random.default_rng().normal(size=testshape)
+    assert not is_binary(randarr)
 
 
 class Test_convert_to_intlabel:
