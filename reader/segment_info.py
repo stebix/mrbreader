@@ -2,6 +2,8 @@ import re
 import collections
 from typing import Union, Dict, List, Iterable, Tuple
 
+
+
 class SegmentInfo:
     """
     A dataclass-like object to store the metadata information belonging to
