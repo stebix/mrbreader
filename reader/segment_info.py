@@ -8,6 +8,7 @@ class SegmentInfo:
     """
     A dataclass-like object to store the metadata information belonging to
     a segment in a 3D-Slicer generated segmentation.
+    We use managed attributes to enforce certain restrictions on attribute values.
     """
     slicer_to_internal_alias = {
         'Color' : 'color',
@@ -155,6 +156,30 @@ class SegmentInfo:
         self._label_value = new_label_value
 
 
+    @property
+    def extent(self) -> Tuple:
+        return self._extent
+
+
+    @extent.setter
+    def extent(self, extent_candidate: Union[Iterable, str]) -> None:
+        """
+        Extent setter for managed attribute.
+        Tries to cast string as tuple of six integers following the
+        3DSlicer API specification:
+
+        SegmentN_Extent: 6 space-separated values
+        -> (minI, maxI, minJ, maxJ, minZ, maxZ)
+        defining extent of non-empty region within the segment.
+        """
+        if isinstance(extent_candidate, str):
+            extent_candidate = extent_candidate.split(' ')
+
+        assert len(extent_candidate) == 6, 'Expecting 6 indices for extent specification in 3D'
+        extent = [int(idx) for idx in extent_candidate]
+        self._extent = extent
+
+
 
     @classmethod
     def from_header(cls,
@@ -164,7 +189,7 @@ class SegmentInfo:
         the header data
         """
         segment_prefix = 'Segment'
-        pattern = re.compile(pattern=segment_prefix + '\d')
+        pattern = re.compile(pattern=segment_prefix + '[0-9]+')
         segment_attrs = {}
         # exhaustive search over the full header dictionary
         for key, value in header_data.items():
