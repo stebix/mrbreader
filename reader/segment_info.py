@@ -130,7 +130,7 @@ class SegmentInfo:
             # try RGB interpretation from string
             c = c.split(' ')
         
-        assert len(c) == 3, f'Expecting RGB specifivation of length 3, got length {len(c)}'
+        assert len(c) == 3, f'Expecting RGB specification of length 3, got length {len(c)}'
         
         c_checked = []
         for val in c:
