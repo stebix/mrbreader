@@ -103,13 +103,14 @@ class SegmentInfo:
                 for key in self.internal_to_slicer_alias.keys()
             }
         else:
+            # Note that for full symmetry we have to back-convert the color float tuple
+            # and the extent integer tuple into a space-separated string
+            # obj_dict[''.join((prefix, 'Color'))] = ' '.join(str(val) for val in self.color)
+            # This is omitted here, probably WeAren'tGonnaNeedIt (WAGNI)
             obj_dict = {
                 ''.join((prefix, key)) : getattr(self, value)
                 for key, value in self.slicer_to_internal_alias.items()
             }
-            # for full symmetry we have to back-convert the color float tuple
-            # into a space-separated string
-            obj_dict[''.join((prefix, 'Color'))] = ' '.join(str(val) for val in self.color)
         return obj_dict
 
 
