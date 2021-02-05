@@ -162,7 +162,7 @@ class SegmentInfo:
 
 
     @extent.setter
-    def extent(self, extent_candidate: Union[Iterable, str]) -> None:
+    def extent(self, extent_candidate: Iterable) -> None:
         """
         Extent setter for managed attribute.
         Tries to cast string as tuple of six integers following the
