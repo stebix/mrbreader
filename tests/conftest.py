@@ -19,7 +19,8 @@ def segmentation(mrbfile):
     Set up segmentation mock data
     """
     seg = mrbfile.read_segmentations()[0]
-    label_candidates = list(seg.infos.keys())
+    # add 0 for background emulation
+    label_candidates = list(seg.infos.keys()) + [0]
     # use mock data with reduced spatial size: we want efficient tests
     target_shape = (10, 10, 10)
     downsampled_data = np.random.default_rng().choice(
