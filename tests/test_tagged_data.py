@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 from reader.mrbfile import MRBFile
-from reader.tagged_data import SegmentationData, RawData
+from reader.tagged_data import SegmentationData
 
 
 def equal_seginfos(instance_a, instance_b):
@@ -71,3 +71,28 @@ def test_swaplabel_is_noop_on_identical_labels(segmentation):
     segmentation.swaplabel(label_a, label_b)
     result_data = segmentation.data
     assert np.array_equal(original_data, result_data), 'Swaplabel should be a no-op here'
+
+
+def test_fit_from_template_fullchange(segmentation, fullchange_template):
+    original_data = np.copy(segmentation.data)
+    original_repr = str(segmentation)
+    segmentation.fit_to_template(fullchange_template)
+    result_data = segmentation.data
+    result_repr = str(segmentation)
+    
+    print(f'Unique original data: {np.unique(original_data)}')
+    print('Original: ', original_repr)
+    print('Result: ', result_repr)
+
+    assert set(np.unique(result_data)) == set((0, 10, 20, 30)), 'Numerical data should be modified'  
+
+
+
+
+
+
+
+
+
+
+
