@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 
 from reader.mrbfile import MRBFile
+from reader.templates import template
 
 
 @pytest.fixture
@@ -43,3 +44,44 @@ def segmentation(mrbfile):
     assert set(np.unique(seg.data)) == set(label_candidates)
 
     return seg
+
+
+@pytest.fixture
+def standard_template():
+    return template
+
+
+@pytest.fixture
+def fullchange_template():
+    cochlea_equivalents = frozenset(
+    ('cochlea', 'Cochlea', 'chl', 'Schnecke', 'schnecke')
+    )
+    vestibulum_equivalents = frozenset(
+        ('vestibulum', 'Vestibulum', 'vest')
+    )
+    canals_equivalents = frozenset(
+        ('Bogengänge', 'bogengänge', 'bogengaenge', 'Bogengaenge',
+         'canals', 'Canals', 'semicircular canals', 'Bogen',
+         'bogen')
+    )
+    template = {
+        cochlea_equivalents : {
+            'name' : 'foo',
+            'color' : (1, 0, 0),
+            'ID' : 'Segment_foo',
+            'label_value' : 10
+        },
+        vestibulum_equivalents : {
+            'name' : 'bar',
+            'color' : (0, 1, 0),
+            'ID' : 'Segment_bar',
+            'label_value' : 20
+        },
+        canals_equivalents : {
+            'name' : 'baz',
+            'color' : (0, 0, 1),
+            'ID' : 'Segment_baz',
+            'label_value' : 30
+        }
+    }
+    return template
