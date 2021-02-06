@@ -3,7 +3,7 @@ import re
 import collections
 import numpy as np
 
-from typing import Dict, List, Tuple, Iterable, Any, Union
+from typing import Dict, List, Tuple, Iterable, Any, NewType
 from reader.segment_info import SegmentInfo
 from reader.utils import relabel
 
@@ -11,6 +11,8 @@ from reader.utils import relabel
 The parsing of files originating from the manual segmentation process
 comes with a lot of metadata processing.
 """
+
+EquivDict = NewType('EquivDict', Dict[frozenset, Dict])
 
 
 class TaggedData:
@@ -225,7 +227,7 @@ class SegmentationData(TaggedData):
         self._update_state_from_infos()
 
     
-    def fit_to_template(self, templates: List[Dict]) -> None:
+    def fit_to_template(self, templates: EquivDict) -> None:
         """
         Fit the data member and the corresponding SegmentInfo instances to
         adhere to the given naming template. 
