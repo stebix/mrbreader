@@ -1,10 +1,9 @@
-import pathlib
 import copy
 import numpy as np
 import pytest
 
 from reader.mrbfile import MRBFile
-from reader.tagged_data import SegmentationData, SegmentInfo, RawData
+from reader.tagged_data import SegmentationData, RawData
 
 
 def equal_seginfos(instance_a, instance_b):
@@ -19,46 +18,6 @@ def equal_seginfos(instance_a, instance_b):
             return False
     else:
         return True
-
-
-
-@pytest.fixture
-def mrbfile():
-    fpath = pathlib.Path(
-        'C:/Users/Jannik/Desktop/mrbreader/tests/assets/testmrb_multiseg.mrb')
-    mrb = MRBFile(fpath)
-    return mrb
-
-
-@pytest.fixture
-def segmentation(mrbfile):
-    """
-    Set up segmentation mock data
-    """
-    seg = mrbfile.read_segmentations()[0]
-    label_candidates = list(seg.infos.keys())
-    # use mock data with reduced spatial size: we want efficient tests
-    target_shape = (10, 10, 10)
-    downsampled_data = np.random.default_rng().choice(
-        label_candidates, size=np.prod(target_shape)
-    )
-    # guarantee the existence of every label value by sampling
-    # three indices per label value that are deterministically
-    # given that label value
-    fixed_idcs = np.random.default_rng().choice(
-        np.prod(target_shape), size=(len(label_candidates), 3),
-        replace=False
-    )
-    for idx, label_candidate in enumerate(label_candidates):
-        downsampled_data[fixed_idcs[idx, :]] = label_candidate
-
-    seg.data = downsampled_data.reshape(target_shape)
-
-    # sanity checking - remove later
-    assert seg.data.shape == target_shape
-    assert set(np.unique(seg.data)) == set(label_candidates)
-
-    return seg
 
 
 def test_label_values_data_consistency(segmentation):
@@ -106,3 +65,10 @@ def test_swaplabel_effect_on_data(segmentation):
     assert np.all(new_data[original_data != label_b] != label_a)
 
 
+def test_swaplabel_is_noop_on_identical_labels(segmentation):
+    label_a = 1
+    label_b = 1
+    original_data = np.copy(segmentation.data)
+    segmentation.swaplabel(label_a, label_b)
+    result_data = segmentation.data
+    assert np.array_equal(original_data, result_data), 'Swaplabel should be a no-op here'
