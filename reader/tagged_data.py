@@ -74,6 +74,10 @@ class SegmentationData(TaggedData):
         self.infos = {
             si.label_value : si for si in SegmentInfo.from_header(metadata)
         }
+        # TODO: UNSAFE addition of background, might shadow other segment!
+        background_label_value = 0
+        self.infos[background_label_value] = SegmentInfo.background(background_label_value)
+
         # TODO: this is sloooow due to numpy.unique!
         # self._check_consistency()
     
@@ -228,7 +232,7 @@ class SegmentationData(TaggedData):
         """
         label_values = set(seginfo.label_value for seginfo in self.infos.values())
         for segment in self.infos.values():
-            other_label_values = label_values - set(segment.label_value)
+            other_label_values = label_values - set((segment.label_value,))
             for equivalents, updated_attrs in templates.items():
                 if segment.name in equivalents:
                     # update the SegmentInfo instance describing the
@@ -254,7 +258,7 @@ class SegmentationData(TaggedData):
                         else:
                             setattr(segment, attr_name, new_attr_val)
                     break
-                
+        # propagate state changes
         self._update_state_from_infos()
 
 
