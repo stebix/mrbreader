@@ -109,12 +109,61 @@ def convert_to_onehot(array: np.ndarray) -> np.ndarray:
 
 
 
-def homogenize(segmentation_data_list: List) -> None:
-    """
-    Homogenize segment label_value and naming schemes that might differ
-    due to varying individual segmentation schemes.
-    """
-    pass
+# def homogenize(segmentation_data_list: List) -> None:
+#     """
+#     Homogenize segment label_value and naming schemes that might differ
+#     due to varying individual segmentation schemes.
+#     """
+#     attribute_mapping = [
+#         {
+#             'root_name' : 'cochlea',
+#             'equivalences' : set(
+#                 ('cochlea', 'schnecke' , 'chl')
+#             ),
+#             'root_label_value' : 1,
+#             'root_color' : (1, 0, 0),
+#             'root_ID' : 'Segment_1',
+#             'root_layer' : None
+#         },
+#         {
+#             'root_name' : 'vestibulum',
+#             'equivalences' : set(
+#                 ('vestibulum', 'vest')
+#             ),
+#             'root_label_value' : 2,
+#             'root_color' : (0, 1, 0),
+#             'root_ID' : 'Segment_2',
+#             'root_layer' : None
+#         },
+#         {
+#             'root_name' : 'canals',
+#             'equivalences' : set(
+#                 ('bogengänge', 'bogengaenge', 'bogen', 'canals',
+#                  'semicircular canals')
+#             ),
+#             'root_label_value' : 3,
+#             'root_color' : (0, 0, 1),
+#             'root_ID' : 'Segment_3',
+#             'root_layer' : None
+#         }
+#     ]
+
+#     def set_info_attributes(segmentinfo_obj, new_attrs) -> None:
+#         for key, value in new_attrs.items():
+#             if key.startswith('root_') and value is not None:
+#                 attr_name = key.split('_')[1]
+#                 setattr(segmentinfo_obj, attr_name, value)
+#         return None
+
+
+#     for segmentation_data in segmentation_data_list:
+#         for segment in segmentation_data.infos.values():
+#             for root_spec in attribute_mapping:
+#                 if segment.name in root_spec['equivalences']:
+#                     set_info_attributes(segment, root_spec)
+
+
+
 
 
 def relabel(label_array: np.ndarray,

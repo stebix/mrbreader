@@ -37,7 +37,6 @@ def test_relabel_effect_on_infos(segmentation):
     assert equal_seginfos(old_seginfo, new_seginfo)
     
 
-
 def test_relabel_effect_on_data(segmentation):
     original_data = np.copy(segmentation.data)
     old_label = np.unique(original_data)[-1]

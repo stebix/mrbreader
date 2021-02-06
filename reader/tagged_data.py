@@ -220,6 +220,43 @@ class SegmentationData(TaggedData):
         # propagate state changes
         self._update_state_from_infos()
 
+    
+    def fit_to_template(self, templates: List[Dict]) -> None:
+        """
+        Fit the data member and the corresponding SegmentInfo instances to
+        adhere to the given naming template. 
+        """
+        label_values = set(seginfo.label_value for seginfo in self.infos.values())
+        for segment in self.infos.values():
+            other_label_values = label_values - set(segment.label_value)
+            for equivalents, updated_attrs in templates.items():
+                if segment.name in equivalents:
+                    # update the SegmentInfo instance describing the
+                    # semantic class
+                    assert 'name' in updated_attrs, 'Requiring name to identify segment!'
+                    segment.name = updated_attrs['name']
+                    # We have to dispatch relabel or swaplabel if label values are changed
+                    # to ensure that the numerical data member (numpy.ndarray) and the
+                    # describing SegmentInfo instances are synchronized 
+                    for attr_name, new_attr_val in updated_attrs.items():
+                        if new_attr_val is None:
+                            continue
+                        elif attr_name == 'label_value':
+                            if new_attr_val == segment.label_value:
+                                # no change of label_value as value is identical
+                                continue
+                            elif new_attr_val in other_label_values:
+                                # use swaplabel to avoid label value clash
+                                self.swaplabel(segment.label_value, new_attr_val)
+                            else:
+                                # easy relabel as new label_value is not pre-existing
+                                self.relabel(segment.label_value, new_attr_val)
+                        else:
+                            setattr(segment, attr_name, new_attr_val)
+                    break
+                
+        self._update_state_from_infos()
+
 
     def _update_state_from_infos(self) -> None:
         """
@@ -228,7 +265,7 @@ class SegmentationData(TaggedData):
         There the `SegmentInfo` instances the nicely describe the individual segments
         are stored.
 
-        We use this to method to ensure internal consitency after an interaction
+        We use this to method to ensure internal consistency after an interaction
         with the `SegmentInfo` instances for modifications like renaming,
         relabeling, etc. 
         """
