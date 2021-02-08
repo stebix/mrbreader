@@ -190,10 +190,31 @@ class SegmentInfo:
 
     @classmethod
     def from_header(cls,
-                    header_data: collections.OrderedDict) -> List['SegmentInfo']:
+                    header_data: collections.OrderedDict,
+                    include_background: bool = True,
+                    background_label_value: int = 0) -> List['SegmentInfo']:
         """
         Directly create the exhaustive list of SegmentInfo instances from
         the header data
+
+        Parameters
+        ----------
+
+        header_data : dictionary
+            Dictionary-like object holding the full information
+            about the different segments present in the data.
+
+        include_background : bool, optional
+            Set the automatic addition of the segment info
+            for the background semantic class that is usually
+            not present in a 3DSlicer header_data dict.
+            Defaults to True.
+
+        background_label_value : int, optional
+            The label value for the background semantic class.
+            Noe effect if `include_background = False`
+            Must be an integer. Defaults to 0.
+
         """
         segment_prefix = 'Segment'
         pattern = re.compile(pattern=segment_prefix + '[0-9]+')
@@ -216,14 +237,27 @@ class SegmentInfo:
                 
                 segment_attrs[segment_id][attr_name] = value
         
-        return [cls(**kwargs) for kwargs in segment_attrs.values()]
+        segment_infos = [cls(**kwargs) for kwargs in segment_attrs.values()]
+        if include_background:
+            segment_infos.append(cls.make_background(background_label_value))
+        
+        return segment_infos
     
 
     @classmethod
-    def background(cls, background_label_value: int = 0) -> 'SegmentInfo':
+    def make_background(cls, background_label_value) -> 'SegmentInfo':
         """
         Create the default-like background SegmentInfo object.
+
+        Parameters
+        ----------
+
+        background_label_value : int
+            The label value for the background semantic class,
+            Should be an integer.
         """
+        if not isinstance(background_label_value, int):
+            background_label_value = int(background_label_value)
         return cls(name='background',
                    color=(0, 0, 0),
                    ID='Segment_0',

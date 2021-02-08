@@ -74,12 +74,10 @@ class SegmentationData(TaggedData):
         # the attribute is layed out as a dict with the label_value of the
         # segment as the key and the `SegmentInfo` as the value
         self.infos = {
-            si.label_value : si for si in SegmentInfo.from_header(metadata)
+            si.label_value : si for si in SegmentInfo.from_header(metadata,
+                                                                  include_background=True,
+                                                                  background_label_value=0)
         }
-        # TODO: UNSAFE addition of background, might shadow other segment!
-        background_label_value = 0
-        self.infos[background_label_value] = SegmentInfo.background(background_label_value)
-
         # TODO: this is sloooow due to numpy.unique!
         # self._check_consistency()
     
@@ -110,7 +108,7 @@ class SegmentationData(TaggedData):
     
     def __repr__(self) -> str:
         arr_info_str = 'arr_shape={}, arr_dtype={}'.format(self.data.shape,
-                                                         self.data.dtype)
+                                                           self.data.dtype)
         segment_info = []
         for seginfo_elem in self.infos.values():
             segment_info.append(
