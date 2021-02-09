@@ -15,33 +15,41 @@ def mrbfile():
 
 
 @pytest.fixture
-def segmentation(mrbfile):
+def mock_label_data():
     """
-    Set up segmentation mock data
+    Mock label data of shape (10, 10, 10) and values in [0, 1, 2, 3]
     """
-    seg = mrbfile.read_segmentations()[0]
-    # add 0 for background emulation
-    label_candidates = list(seg.infos.keys()) + [0]
     # use mock data with reduced spatial size: we want efficient tests
     target_shape = (10, 10, 10)
-    downsampled_data = np.random.default_rng().choice(
-        label_candidates, size=np.prod(target_shape)
+    # add 0 for background emulation
+    label_values = [0, 1, 2, 3]
+
+    mock_label_volume = np.random.default_rng().choice(
+        label_values, size=np.prod(target_shape)
     )
     # guarantee the existence of every label value by sampling
     # three indices per label value that are deterministically
     # given that label value
     fixed_idcs = np.random.default_rng().choice(
-        np.prod(target_shape), size=(len(label_candidates), 3),
+        np.prod(target_shape), size=(len(label_values), 3),
         replace=False
     )
-    for idx, label_candidate in enumerate(label_candidates):
-        downsampled_data[fixed_idcs[idx, :]] = label_candidate
+    for idx, label_value in enumerate(label_values):
+        mock_label_volume[fixed_idcs[idx, :]] = label_value
 
-    seg.data = downsampled_data.reshape(target_shape)
+    return mock_label_volume.reshape(target_shape)
 
+
+@pytest.fixture
+def segmentation(mrbfile, mock_label_data):
+    """
+    Set up segmentation mock data
+    """
+    seg = mrbfile.read_segmentations()[0]
+    seg.data = mock_label_data
     # sanity checking - remove later
-    assert seg.data.shape == target_shape
-    assert set(np.unique(seg.data)) == set(label_candidates)
+    assert seg.data.shape == (10, 10, 10)
+    assert set(np.unique(seg.data)) == set((0, 1, 2, 3))
 
     return seg
 
@@ -62,7 +70,7 @@ def fullchange_template():
     canals_equivalents = frozenset(
         ('Bogengänge', 'bogengänge', 'bogengaenge', 'Bogengaenge',
          'canals', 'Canals', 'semicircular canals', 'Bogen',
-         'bogen')
+         'bogen', 'Bogengnge')
     )
     template = {
         cochlea_equivalents : {
