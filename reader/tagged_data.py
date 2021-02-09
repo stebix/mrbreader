@@ -284,4 +284,15 @@ class SegmentationData(TaggedData):
             )
 
 
+
+class WeightData(TaggedData):
+    """
+    Currently undeveloped placeholder class for weight data.
+
+    Weight data can be used to weigh individual voxels differently
+    in the loss or cost calculation during the optimization phase of a
+    deep neural network.
+    """
+    def __init__(self, data, metadata):
+        super().__init__(data, metadata)
     
