@@ -6,7 +6,12 @@ from typing import Union, List, Tuple
 from reader.mrbfile import MRBFile
 from reader.export import HDF5Exporter
 
+
 def _flatten(l, container_types=(List, Tuple)):
+    """
+    Flatten nested iterables (default: list or tuples) of arbitrary depth.
+    Might fail at extreme depths due to Python recursion limit.
+    """
     for elem in l:
         if isinstance(elem, container_types):
             yield from _flatten(elem)
@@ -16,7 +21,7 @@ def _flatten(l, container_types=(List, Tuple)):
 
 def _gather_files(candidate_paths: List[Union[str, pathlib.Path]]) -> List[pathlib.Path]:
     """
-    Gather the list of HDF5 files from a heterogenous candidate path list
+    Gather the list of MRB files from a heterogenous candidate path list
     that may contain directories and filepaths.
     """
     suffixes = ['.MRB', '.mrb']
