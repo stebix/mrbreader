@@ -9,7 +9,7 @@ from reader.export import HDF5Exporter
 class Test_HDF5Exporter:
 
 
-    def test_store_only_raw(self, mock_tagged_raw_data, tmp_path):
+    def test_store_single_raw(self, mock_tagged_raw_data, tmp_path):
         internal_path = 'raw/raw-0'
         exporter = HDF5Exporter(store_metadata=True)
         test_file_path = tmp_path / 'store_only_raw_testfile.hdf5'
@@ -32,6 +32,32 @@ class Test_HDF5Exporter:
         for key in expected_metadata.keys():
             assert key in recovered_metadata.keys(), f'Missing key! {key} not present'
             assert recovered_metadata[key] == expected_metadata[key], f'Value mismatch for {key}'
+
+
+    def test_store_multiple_raw(self, mock_tagged_raw_data, tmp_path):
+        internal_paths = ['raw/raw-0', 'raw/raw-1', 'raw/raw-2']
+        exporter = HDF5Exporter(store_metadata=True)
+        test_file_path = tmp_path / 'store_only_raw_testfile.hdf5'
+
+        # first store file
+        exporter.store(save_path=test_file_path,
+                       tagged_raw_data=[mock_tagged_raw_data] * 3)
+
+        expected_metadata = mock_tagged_raw_data.metadata
+        expected_num_data = mock_tagged_raw_data.data
+        # read file to check consistency
+        for internal_path in internal_paths:
+            recovered_metadata = {}
+            with h5py.File(test_file_path, mode='r') as readfile:
+                recovered_num_data = readfile[internal_path][...]
+                for key, value in readfile[internal_path].attrs.items():
+                    recovered_metadata[key] = value
+
+            # check consistency
+            assert np.array_equal(recovered_num_data, mock_tagged_raw_data.data)
+            for key in expected_metadata.keys():
+                assert key in recovered_metadata.keys(), f'Missing key! {key} not present'
+                assert recovered_metadata[key] == expected_metadata[key], f'Value mismatch for {key}'
 
 
     def test_store_raw_and_label(self, tmp_path,

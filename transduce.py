@@ -23,6 +23,8 @@ def _gather_files(candidate_paths: List[Union[str, pathlib.Path]]) -> List[pathl
     """
     Gather the list of MRB files from a heterogenous candidate path list
     that may contain directories and filepaths.
+    Directories are crawled recursively - this might fail at extreme
+    depths due to Python recursion limit.
     """
     suffixes = ['.MRB', '.mrb']
     # wrap into list if candidate path is only one object
@@ -59,6 +61,11 @@ def main():
         '--target_dir', type=str, required=True,
         help='Target directory where the produced HDF5 files are stored.'
     )
+    parser.add_argument(
+        '--force_write', action='store_true', default=False,
+        help=('Set to overwrite preexisting files. Otherwise FileExistsError is '
+              'thrown on overwrite attempt.')
+    )
     args = parser.parse_args()
 
     target_dir = pathlib.Path(args.target_dir)
@@ -68,9 +75,7 @@ def main():
         assert not target_dir.is_file(), f'Target path < {target_dir.resolve()} > is a file!'
         target_dir.mkdir(parents=True)
     
-    exporter = HDF5Exporter(raw_internal_path='raw/raw-0',
-                            label_internal_path='label/label-0',
-                            force_write=True)
+    exporter = HDF5Exporter(force_write=args.force_write)
     
     for source_file in source_paths:
         prefix = ''
@@ -81,8 +86,8 @@ def main():
 
         exporter.store(
             save_path=target_dir / hdf_fname,
-            tagged_raw_data=mrbfile.read_raws()[0],
-            tagged_label_data=mrbfile.read_segmentations()[0]
+            tagged_raw_data=mrbfile.read_raws(),
+            tagged_label_data=mrbfile.read_segmentations()
         )
 
 
