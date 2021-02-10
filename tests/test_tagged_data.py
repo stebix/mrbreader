@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from reader.mrbfile import MRBFile
-from reader.tagged_data import SegmentationData
+from reader.tagged_data import LabelData
 from reader.segment_info import SegmentInfo
 
 

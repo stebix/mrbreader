@@ -75,9 +75,9 @@ class RawData(TaggedData):
 
 
 
-class SegmentationData(TaggedData):
+class LabelData(TaggedData):
     """
-    Tagged segmentation data.
+    Tagged label data that encapsulates the manual semantic segmentation.
 
     The incoming metadata is expected to be an collections.OrderedDict that holds fields
     that adhere to the 3DSlicer segmentation node specification:
@@ -86,7 +86,7 @@ class SegmentationData(TaggedData):
     """
 
     def __init__(self, data: np.ndarray, metadata: Any) -> None:
-        super(SegmentationData, self).__init__(data, metadata)
+        super(LabelData, self).__init__(data, metadata)
 
         # creates the per-segment metadata information as `SegmentInfo` instances
         # the attribute is layed out as a dict with the label_value of the

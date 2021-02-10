@@ -9,7 +9,7 @@ import nrrd
 from typing import Union, Dict, List, Any, Tuple, Callable, Iterable
 from PIL import Image
 
-from reader.tagged_data import RawData, SegmentationData
+from reader.tagged_data import RawData, LabelData
 
 PathLike = Union[str, pathlib.Path]
 ZipMember = Union[str, zpf.ZipInfo]
@@ -118,7 +118,7 @@ class MRBFile(zpf.ZipFile):
 
 
     
-    def read_segmentations(self) -> List[SegmentationData]:
+    def read_segmentations(self) -> List[LabelData]:
         """
         Return list of segmentation data members of the MRB file.
         From the zip-internal file, the segmentation data and corresponding
@@ -128,14 +128,14 @@ class MRBFile(zpf.ZipFile):
         Returns
         -------
 
-        raws : List[SegmentationData]
+        raws : List[LabelData]
             The list of tuples of parsed segmentation data members.
-            SegmentationData attributes: data, metadata, infos
+            LabelData attributes: data, metadata, infos
 
         """
         local_read_fn = self.read_nrrd
         segmentation_datas = self._read_members(self.segmentation_members, local_read_fn)
-        return [SegmentationData(*elem) for elem in segmentation_datas]
+        return [LabelData(*elem) for elem in segmentation_datas]
     
 
     def _read_members(self,

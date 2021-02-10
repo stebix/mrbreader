@@ -3,11 +3,11 @@ import h5py
 
 from typing import Dict, List, Tuple, Union, NewType
 
-from reader.tagged_data import RawData, SegmentationData, WeightData
+from reader.tagged_data import RawData, LabelData, WeightData
 
 
 """
-This module enables the programmatic exporting of RawData and SegmentationData
+This module enables the programmatic exporting of RawData and LabelData
 pairs as HDF5 files.
 The exporting structure is geared towards direct use of the HDF5 files
 as training data input for the segmentation_net project.
@@ -64,7 +64,7 @@ class HDF5Exporter:
     def store(self,
               save_path: PathLike,
               tagged_raw_data: RawData,
-              tagged_label_data: Union[SegmentationData, None] = None,
+              tagged_label_data: Union[LabelData, None] = None,
               tagged_weight_data: Union[WeightData, None] = None) -> None:
         """
         Store the various data instances (raw, label and weight) to a single
@@ -80,7 +80,7 @@ class HDF5Exporter:
         tagged_raw_data : RawData
             The raw image data object (TaggedData).
         
-        tagged_label_data : SegmentationData, optional
+        tagged_label_data : LabelData, optional
             The label data giving the raw image data voxels
             a semantic class. Defaults to None.
 
