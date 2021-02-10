@@ -25,7 +25,8 @@ class TaggedData:
 
     def __init__(self, data: np.ndarray, metadata: Any) -> None:
         self.data = data
-        self.metadata = metadata
+        # skip setter property in constructor
+        self._metadata = metadata
     
 
     def __repr__(self) -> str:
@@ -43,10 +44,26 @@ class TaggedData:
                                                                               self.data.dtype,
                                                                               type(self.metadata))
         repr_str = '{}({})'.format(
-            self.TaggedData.__name__,
+            self.__class__.__name__,
             attr_repr
         )
         return repr_str
+
+
+    @property
+    def metadata(self) -> Any:
+        return self._metadata
+    
+
+    @metadata.setter
+    def metadata(self, new_metadata: Any) -> None:
+        self._metadata = new_metadata
+    
+
+    @metadata.deleter
+    def metadata(self) -> None:
+        raise AttributeError('Cannot delete metadata attribute!')
+
 
 
 class RawData(TaggedData):
@@ -55,6 +72,7 @@ class RawData(TaggedData):
     Usually just a 3D scalar NumPy array (data) and an OrderedDict (metadata).
     """
     pass
+
 
 
 class SegmentationData(TaggedData):
@@ -120,6 +138,33 @@ class SegmentationData(TaggedData):
         repr_str = '{}({})'.format(self.__class__.__name__,
                                    ', '.join((arr_info_str, seg_info_str)))
         return repr_str
+
+
+    @property
+    def metadata(self):
+        """
+        The metadata attribute is constructed lazily upon request
+        from the `SegmentInfo` instances that should be always
+        up-to-date.
+        """
+        metadata_dict = {}
+        for lbl_value, seginfo in self.infos.items():
+            prefix = f'Segment{lbl_value}_'
+            metadata_dict.update(seginfo.to_dict('slicer', prefix))
+        return metadata_dict
+    
+
+    @metadata.setter
+    def metadata(self, *args, **kwargs):
+        err_msg = (f'Direct metadata attribute modification of {self.__class__.__name__} '
+                   f'is unsupported. Interaction with SegmentInfo instances in the infos '
+                   f'attribute is encouraged.')
+        raise AttributeError(err_msg)
+
+
+    @metadata.deleter
+    def metadata(self):
+        raise AttributeError('Cannot delete metadata attribute!')
 
     
     def relabel(self, old: int, new: int) -> None:
@@ -277,11 +322,14 @@ class SegmentationData(TaggedData):
         self.infos = {
             si.label_value : si for si in self.infos.values()
         }
-        for idx, seginfo in enumerate(self.infos.values()):
-            prefix = f'Segment{idx}_'
-            self.metadata.update(
-                seginfo.to_dict(keystyle='slicer', prefix=prefix)
-            )
+        return None
+
+        # TODO Legacy branch
+        # for idx, seginfo in enumerate(self.infos.values()):
+        #     prefix = f'Segment{idx}_'
+        #     self.metadata.update(
+        #         seginfo.to_dict(keystyle='slicer', prefix=prefix)
+        #     )
 
 
 
