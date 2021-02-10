@@ -7,7 +7,7 @@ from reader.tagged_data import RawData, SegmentationData, WeightData
 
 
 """
-THis module enables the programmatic exporting of RawData and SegmentationData
+This module enables the programmatic exporting of RawData and SegmentationData
 pairs as HDF5 files.
 The exporting structure is geared towards direct use of the HDF5 files
 as training data input for the segmentation_net project.
