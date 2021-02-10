@@ -103,8 +103,6 @@ class SegmentationData(TaggedData):
     def _check_consistency(self) -> None:
         """Run some sanity checks that metadata and numerical data are consistent"""
         lbl_vals_from_metadata = set(self.infos.keys())
-        # background with label_value 0 is generally not included in metadata dict
-        lbl_vals_from_metadata.add(0)
         lbl_vals_from_data = set(np.unique(self.data))
         # TODO: check if numerical datatype shenanigans ruin the day
         # i.e. something along the lines of 1.0 != 1
