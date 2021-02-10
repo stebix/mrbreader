@@ -11,12 +11,12 @@ class Test_HDF5Exporter:
 
     def test_store_only_raw(self, mock_tagged_raw_data, tmp_path):
         internal_path = 'raw/raw-0'
-        exporter = HDF5Exporter(internal_path, store_metadata=True)
+        exporter = HDF5Exporter(store_metadata=True)
         test_file_path = tmp_path / 'store_only_raw_testfile.hdf5'
 
         # first store file
         exporter.store(save_path=test_file_path,
-                       tagged_raw_data=mock_tagged_raw_data)
+                       tagged_raw_data=[mock_tagged_raw_data])
 
         # read file to check consistency
         recovered_metadata = {}
@@ -40,9 +40,7 @@ class Test_HDF5Exporter:
         raw_internal_path = 'raw/raw-0'
         label_internal_path = 'label/label-0'
 
-        exporter = HDF5Exporter(raw_internal_path=raw_internal_path,
-                                label_internal_path=label_internal_path,
-                                store_metadata=True)
+        exporter = HDF5Exporter(store_metadata=True)
         test_file_path = tmp_path / 'store_raw_and_label_testfile.hdf5'
 
         def is_equal(candidate, expected):
@@ -57,8 +55,8 @@ class Test_HDF5Exporter:
 
         # first store file
         exporter.store(save_path=test_file_path,
-                       tagged_raw_data=mock_tagged_raw_data,
-                       tagged_label_data=synthetic_segmentation)
+                       tagged_raw_data=[mock_tagged_raw_data],
+                       tagged_label_data=[synthetic_segmentation])
         
         # extract and compare
         raw_label_components = zip(
@@ -89,14 +87,13 @@ class Test_HDF5Exporter:
             writefile.write('Please do not overwrite me :D !!!')
         
         internal_path = 'raw/raw-0'
-        exporter = HDF5Exporter(internal_path,
-                                store_metadata=True,
+        exporter = HDF5Exporter(store_metadata=True,
                                 force_write=False)
 
         # try to store file to pre-existing file path
         with pytest.raises(FileExistsError):
             exporter.store(save_path=test_file_path,
-                           tagged_raw_data=mock_tagged_raw_data)
+                           tagged_raw_data=[mock_tagged_raw_data])
 
 
 

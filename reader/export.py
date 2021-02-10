@@ -1,7 +1,8 @@
 import pathlib
+import itertools
 import h5py
 
-from typing import Dict, List, Tuple, Union, NewType
+from typing import Dict, List, Tuple, Union, NewType, Sequence
 
 from reader.tagged_data import RawData, LabelData, WeightData
 
@@ -47,15 +48,25 @@ class HDF5Exporter:
     """
 
     def __init__(self,
-                 raw_internal_path: PathLike,
-                 label_internal_path: PathLike = None,
-                 weight_internal_path: PathLike = None,
+                 raw_internal_grpname: str = 'raw',
+                 raw_internal_dsetname: str = 'raw-',
+                 label_internal_grpname: str = 'label',
+                 label_internal_dsetname: str = 'label-',
+                 weight_internal_grpname: str = 'weight',
+                 weight_internal_dsetname: str = 'weight-',
                  force_write: bool = False,
                  store_metadata: bool = True) -> None:
-    
-        self.raw_internal_path = raw_internal_path
-        self.label_internal_path = label_internal_path
-        self.weight_internal_path = weight_internal_path
+
+        # raw data 
+        self.raw_internal_grpname = raw_internal_grpname
+        self.raw_internal_dsetname = raw_internal_dsetname
+        # label data
+        self.label_internal_grpname = label_internal_grpname
+        self.label_internal_dsetname = label_internal_dsetname
+        # weight data
+        self.weight_internal_grpname = weight_internal_grpname
+        self.weight_internal_dsetname = weight_internal_dsetname
+
         self.force_write = force_write
         self.store_metadata = store_metadata
 
@@ -63,9 +74,9 @@ class HDF5Exporter:
     
     def store(self,
               save_path: PathLike,
-              tagged_raw_data: RawData,
-              tagged_label_data: Union[LabelData, None] = None,
-              tagged_weight_data: Union[WeightData, None] = None) -> None:
+              tagged_raw_data: Sequence[RawData],
+              tagged_label_data: Sequence[Union[LabelData, None]] = [],
+              tagged_weight_data: Sequence[Union[WeightData, None]] = []) -> None:
         """
         Store the various data instances (raw, label and weight) to a single
         HDF5 file specified by the save path. 
@@ -77,17 +88,18 @@ class HDF5Exporter:
             The save path of the HDF5 file. Depending on the selected
             overwriting behaviour, paths to pre-existing files may fail.
         
-        tagged_raw_data : RawData
-            The raw image data object (TaggedData).
+        tagged_raw_data : Sequence[RawData]
+            The raw image data objects (TaggedData).
         
-        tagged_label_data : LabelData, optional
-            The label data giving the raw image data voxels
+        tagged_label_data : Sequence[LabelData], optional
+            The label data objects giving the raw image data voxels
             a semantic class. Defaults to None.
 
-        tagged_weight_data : WeightData, optional
-            The weight data giving the raw image data voxels
+        tagged_weight_data : Sequence[WeightData], optional
+            The weight data objects giving the raw image data voxels
             a specific weighting factor. Defaults to None.
         """
+        # enforce various type castings
         if not isinstance(save_path, pathlib.Path):
             save_path = pathlib.Path(save_path)
 
@@ -99,24 +111,58 @@ class HDF5Exporter:
         else:
             hdf5_write_mode = 'x'
         
-        tagged_datas = [tagged_raw_data, tagged_label_data, tagged_weight_data]
-        internal_paths = [self.raw_internal_path, self.label_internal_path,
-                          self.weight_internal_path]
+        tagged_datas = itertools.zip_longest(
+            tagged_raw_data, tagged_label_data, tagged_weight_data,
+            fillvalue=None
+        )
 
         with h5py.File(save_path, mode=hdf5_write_mode) as writefile:
-            for tagged_data, internal_path in zip(tagged_datas, internal_paths):
-                if tagged_data is None:
-                    continue
-                else:
-                    assert_msg = (f'Missing the HDF5 internal path for the given data '
-                                  f'object {str(tagged_data)}!')
-                    assert internal_path is not None, assert_msg
-                    
-                # actual numerical data storage
-                writefile[internal_path] = tagged_data.data
-                # metadata storage as h5py.File.Group.dataset.attribute
-                if self.store_metadata:
-                    for key, value in tagged_data.metadata.items():
-                        writefile[internal_path].attrs[key] = value
+            for idx, tagged_data_tuple in enumerate(tagged_datas):
+                internal_paths = self.construct_internal_paths(idx)
 
+                # iterate over (raw, label, weight)
+                for int_path, tagged_data in zip(internal_paths, tagged_data_tuple):
+                    if tagged_data is None:
+                        continue
+                    # actual numerical data storage
+                    writefile[int_path] = tagged_data.data
+                    # metadata storage as h5py.File.Group.dataset.attribute
+                    if self.store_metadata:
+                        for key, value in tagged_data.metadata.items():
+                            writefile[int_path].attrs[key] = value
+
+
+    def construct_internal_paths(self, idx: int) -> Tuple[str, str, str]:
+        """
+        Construct the tuple of HDF5-internal paths for the array data tuple
+        (raw, label, weight)
+        -> (raw_internal_path, label_internal_path, weight_internal_path)
+
+        Parameters
+        ----------
+
+        idx : int
+            The index differentiating the dataset inside the group
+            of the HDF5 file.
+        
+        Returns
+        -------
+
+        internal_paths : 3-tuple of string
+            The constructed internal paths:
+            f'grp_name / dset_name{idx}'
+            (raw_internal_path, label_internal_path, weight_internal_path)
+        """
+        grp_names = [self.raw_internal_grpname,
+                     self.label_internal_grpname,
+                     self.weight_internal_grpname]
+        dset_names = [self.raw_internal_dsetname,
+                      self.label_internal_dsetname,
+                      self.weight_internal_dsetname]
+        internal_paths = []
+        for grp_name, dset_name in zip(grp_names, dset_names):
+            internal_paths.append('/'.join((grp_name, dset_name + str(idx))))
+        return tuple(internal_paths)
+
+        
 
