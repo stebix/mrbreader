@@ -8,20 +8,6 @@ from reader.tagged_data import SegmentationData
 from reader.segment_info import SegmentInfo
 
 
-class SegmentationDataMock(SegmentationData):
-    """
-    Mock class that should only overwrite the default constructor/initializer
-    for easier local test setup without a metadata dictionary. 
-    """
-    def __init__(self, segmentinfos, data=None):
-        self.infos = {
-            si.label_value : si for si in segmentinfos 
-        }
-        self.data = data
-        self.metadata = {}
-
-
-
 def equal_seginfos(instance_a, instance_b):
     """
     helper function to quickly compare two
@@ -168,37 +154,6 @@ class Test_fit_from_template_multiple_segmentations:
         The naming and labeling schemes differ fo testing purposes
         """
         return [segmentation_1, segmentation_2, segmentation_3]
-
-
-    @pytest.fixture
-    def synthetic_segmentation(self, mock_label_data):
-        """
-        Fully synthetic SegmentationData object.
-        Constructed using the local `SegmentationDataMock` class. 
-        """
-        background_si = SegmentInfo(
-            'background', (0, 0, 0), 'Segment_0', 0,
-            None, None, None, None, None
-        )
-        cochlea_si = SegmentInfo(
-            'Cochlea', (1, 0, 0), 'Segment_1', 1,
-            None, None, None, None, None
-        )
-        vestibulum_si = SegmentInfo(
-            'Vestibulum', (0, 1, 0), 'Segment_2', 2,
-            None, None, None, None, None
-        )
-        bogen_si = SegmentInfo(
-            'Bogen', (0, 0, 1), 'Segment_3', 3,
-            None, None, None, None, None
-        )
-        seginfos = [background_si, cochlea_si,
-                    vestibulum_si, bogen_si]
-
-        segmentation = SegmentationDataMock(
-            seginfos, data=mock_label_data)
-        
-        return segmentation
 
 
     def test_print_string_reprs(self, segmentations, fullchange_template):

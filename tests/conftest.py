@@ -3,7 +3,24 @@ import numpy as np
 import pytest
 
 from reader.mrbfile import MRBFile
+from reader.tagged_data import SegmentationData
+from reader.segment_info import SegmentInfo
 from reader.templates import template
+
+
+
+class SegmentationDataMock(SegmentationData):
+    """
+    Mock class that should only overwrite the default constructor/initializer
+    for easier local test setup without a metadata dictionary. 
+    """
+    def __init__(self, segmentinfos, data=None):
+        self.infos = {
+            si.label_value : si for si in segmentinfos 
+        }
+        self.data = data
+        self.metadata = {}
+
 
 
 @pytest.fixture
@@ -93,3 +110,35 @@ def fullchange_template():
         }
     }
     return template
+
+
+
+    @pytest.fixture
+    def synthetic_segmentation(self, mock_label_data):
+        """
+        Fully synthetic SegmentationData object.
+        Constructed using the local `SegmentationDataMock` class. 
+        """
+        background_si = SegmentInfo(
+            'background', (0, 0, 0), 'Segment_0', 0,
+            None, None, None, None, None
+        )
+        cochlea_si = SegmentInfo(
+            'Cochlea', (1, 0, 0), 'Segment_1', 1,
+            None, None, None, None, None
+        )
+        vestibulum_si = SegmentInfo(
+            'Vestibulum', (0, 1, 0), 'Segment_2', 2,
+            None, None, None, None, None
+        )
+        bogen_si = SegmentInfo(
+            'Bogen', (0, 0, 1), 'Segment_3', 3,
+            None, None, None, None, None
+        )
+        seginfos = [background_si, cochlea_si,
+                    vestibulum_si, bogen_si]
+
+        segmentation = SegmentationDataMock(
+            seginfos, data=mock_label_data)
+        
+        return segmentation
