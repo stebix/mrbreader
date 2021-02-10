@@ -3,6 +3,9 @@
 *.nrrd
 *.mrml
 *.png
+*.hdf5
+*.h5
+*.hdf
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
