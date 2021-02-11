@@ -248,7 +248,7 @@ class SegmentInfo:
     @classmethod
     def make_background(cls, background_label_value) -> 'SegmentInfo':
         """
-        Create the default-like background SegmentInfo object.
+        Alternative constructor to create the default-like background SegmentInfo object.
 
         Parameters
         ----------
