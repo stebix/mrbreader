@@ -11,7 +11,8 @@ vestibulum_equivalents = frozenset(
 )
 canals_equivalents = frozenset(
     ('Bogengänge', 'bogengänge', 'bogengaenge', 'Bogengaenge',
-     'canals', 'Canals', 'semicircular canals', 'Bogen', 'bogen')
+     'canals', 'Canals', 'semicircular canals', 'Bogen',
+     'bogen', 'Bogengnge', 'bogengnge')
 )
 
 template = {
