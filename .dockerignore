@@ -1,0 +1,9 @@
+# Dockerignore directives
+
+.git
+.vscode
+.pytest_cache
+tests/*/
+tests/__pycache__
+tests/assets
+tests/.pytest_cache
