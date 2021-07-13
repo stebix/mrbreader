@@ -5,6 +5,7 @@ import h5py
 from typing import Dict, List, Tuple, Union, NewType, Sequence
 
 from reader.tagged_data import RawData, LabelData, WeightData
+from reader.mrbfile import MRBFile
 
 
 """
@@ -15,6 +16,8 @@ as training data input for the segmentation_net project.
 """
 
 PathLike = NewType('PathLike', Union[str, pathlib.Path, None])
+
+# TODO: Refactor this approach ...
 
 class HDF5Exporter:
     """
@@ -54,6 +57,8 @@ class HDF5Exporter:
                  label_internal_dsetname: str = 'label-',
                  weight_internal_grpname: str = 'weight',
                  weight_internal_dsetname: str = 'weight-',
+                 landmark_internal_grpname: str = 'landmark',
+                 landmark_internal_dsetname: str = 'landmark-',
                  force_write: bool = False,
                  store_metadata: bool = True) -> None:
 
@@ -66,10 +71,62 @@ class HDF5Exporter:
         # weight data
         self.weight_internal_grpname = weight_internal_grpname
         self.weight_internal_dsetname = weight_internal_dsetname
+        # landmark data
+        self.landmark_internal_grpname = landmark_internal_grpname
+        self.landmark_internal_dsetname = landmark_internal_dsetname
 
         self.force_write = force_write
         self.store_metadata = store_metadata
 
+    
+
+    def store_mrb(self, save_path: PathLike, mrbfile: MRBFile) -> None:
+        """
+        Export/store a given `MRBFile` object as a HDF5 file on disk to the
+        location given by `save_path`.
+        """
+        save_path = pathlib.Path(save_path)
+
+        if save_path.is_file() and self.force_write:
+            hdf5_write_mode = 'w'
+        elif save_path.is_file() and not self.force_write:
+            err_msg = f'File already existing at location: < {save_path.absolute()} >' 
+            raise FileExistsError(err_msg)
+        elif save_path.is_dir():
+            raise IsADirectoryError(f'Save path points to a directory: {save_path.resolve()}')
+        else:
+            hdf5_write_mode = 'x'
+
+        # all tagged data extracted from the MRB file
+        total_tagged_datas = itertools.zip_longest(
+            mrbfile.read_raws(), mrbfile.read_segmentations(), mrbfile.read_weights(),
+            fillvalue=None
+        )
+        # iterate over raw, segmentation and weight and save appropriately
+        with h5py.File(save_path, mode=hdf5_write_mode) as wfile:
+            for idx, tagged_data_tuple in enumerate(total_tagged_datas):
+                internal_path_tuple = self.construct_internal_paths(idx)
+                print(tagged_data_tuple)
+                for int_path, tgdat in zip(internal_path_tuple, tagged_data_tuple):
+                    if tgdat is None:
+                        continue
+                    # write numerical array data
+                    wfile[int_path] = tgdat.data
+                    # write metadata
+                    if self.store_metadata:
+                        for k, v in tgdat.metadata.items():
+                            wfile[int_path].attrs[k] = v
+        
+            # save landmark data in separate group
+            # every landmark gets an empty placeholder dataset
+            lmrk_grp = wfile.create_group(self.landmark_internal_grpname)
+            for idx, landmark in enumerate(mrbfile.read_landmarks()):
+                dset_name = ''.join((self.landmark_internal_dsetname, str(idx)))
+                dset = lmrk_grp.create_dataset(dset_name, data=h5py.Empty(dtype='f'))
+                for k, v in landmark.items():
+                    dset.attrs[k] = v
+        
+        return None
 
     
     def store(self,

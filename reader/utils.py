@@ -139,3 +139,88 @@ def relabel(label_array: np.ndarray,
         relabeled_array[label_array == o] = n
     
     return relabeled_array
+
+
+def lps_to_ijk_matrix(space_directions: np.ndarray,
+                      space_origin: np.ndarray) -> np.ndarray:
+    """
+    Construct LPS (left posterior superior) image space to voxel space transformation matrix
+    `lps_to_ijk` from 3DSlicer/DICOM metadata attributes.
+
+    See: https://www.slicer.org/wiki/Coordinate_systems and
+         https://discourse.slicer.org/t/building-the-ijk-to-ras-transform-from-a-nrrd-file/1513
+
+    
+    Parameters
+    ----------
+
+    space_directions: np.ndarray
+        Axis directions as a 3 x 3 matrix/array.
+
+    space_origin: np.ndarray
+        Coordinate system origin. Acts as a translation vector.
+        3D vector.
+
+    
+    Returns
+    -------
+
+    transformation_matrix: np.ndarray
+        The 4D transformation matrix from LPS to IJK
+        in homogenous coordinates.
+    """
+    assert space_directions.shape == (3, 3), (f'Expecting shape (3, 3) for direction matrix, '
+                                              f'got {space_directions.shape}')
+    assert space_origin.shape == (3,), (f'Expecting shape (3,) for origin vector, '
+                                        f'got {space_origin.shape}')
+    unitvec = np.array([[0, 0, 0, 1]])
+    space_concat = np.concatenate((space_directions, space_origin.reshape(3, 1)), axis=1)
+    homog_concat = np.concatenate((space_concat, unitvec), axis=0)
+    return np.linalg.inv(homog_concat)
+
+
+
+def ras_to_ijk_matrix(space_directions: np.ndarray,
+                      space_origin: np.ndarray) -> np.ndarray:
+    """
+    Construct RAS (right anterior superior) image space to voxel space transformation matrix
+    `ras_to_ijk` from 3DSlicer/DICOM metadata attributes.
+
+    See: https://www.slicer.org/wiki/Coordinate_systems and
+         https://discourse.slicer.org/t/building-the-ijk-to-ras-transform-from-a-nrrd-file/1513
+
+    
+    Parameters
+    ----------
+
+    space_directions: np.ndarray
+        Axis directions as a 3 x 3 matrix/array.
+
+    space_origin: np.ndarray
+        Coordinate system origin. Acts as a translation vector.
+        3D vector.
+
+    
+    Returns
+    -------
+
+    transformation_matrix: np.ndarray
+        The 4D transformation matrix from RAS to IJK
+        in homogenous coordinates.
+
+    """
+    lps_to_ijk = lps_to_ijk_matrix(space_directions, space_origin)
+    ras_to_lps = np.diag([-1, -1, 1, 1])
+    # composite matrix acts on vector on right side
+    return lps_to_ijk @ ras_to_lps
+
+
+def expand_to_4D(vector: np.ndarray) -> np.ndarray:
+    """Expand flat 3D vector to 4D column vector in homogenous coordinates."""
+    expanded_vector = np.concatenate((vector, np.ones(1, vector.dtype)), axis=0)
+    return expanded_vector.reshape(4, 1)
+
+
+def reduce_from_4D(vector: np.ndarray) -> np.ndarray:
+    """Reduce 4D vector in homogenous coordinates to flat spatial 3D vector"""
+    return np.squeeze(vector)[:-1]

@@ -8,7 +8,11 @@ Unittests and integrationtest for the utils module.
 from reader.utils import (is_binary, is_onehot,
                           convert_to_intlabel,
                           convert_to_onehot,
-                          relabel)
+                          relabel,
+                          lps_to_ijk_matrix,
+                          ras_to_ijk_matrix,
+                          expand_to_4D,
+                          reduce_from_4D)
 
 
 @pytest.fixture
@@ -199,3 +203,42 @@ class Test_relabel:
         new = np.repeat([-137], old.shape)
         res = relabel(label_array, old, new)
         assert np.allclose(res, new), 'Should be filled with a single value'
+
+
+class Test_coordinate_transformations:
+
+
+    def test_effect_lps_to_ijk(self):
+        expected_inverse = np.array(
+            [[1, 2, 3, 8],
+             [2, 1, -1, 6],
+             [4, 9, 0, 1],
+             [0, 0, 0, 1]]
+        )
+        space_direction = expected_inverse[:3, :3]
+        space_origin = expected_inverse[:-1, -1]
+        expected_result = np.linalg.inv(expected_inverse)
+
+        result = lps_to_ijk_matrix(space_directions=space_direction,
+                                   space_origin=space_origin)
+
+        assert np.allclose(result, expected_result), 'Result transformation matrix mismatch'
+        
+
+def test_expand_4D():
+    vector = np.array([0, 5, 9])
+    expected_result = np.array([0, 5, 9, 1]).reshape(4, 1)
+    result = expand_to_4D(vector)
+    assert expected_result.shape == result.shape, (f'Shape mismatch: {result.shape} '
+                                                   f'!= {expected_result.shape} (expected)')
+    assert np.allclose(expected_result, result), 'Result mismatch'
+
+
+def test_reduce_4D():
+    vector = np.array([0, 5, 9, 1]).reshape(4, 1)
+    expected_result = np.array([0, 5, 9])
+    result = reduce_from_4D(vector)
+    assert expected_result.shape == result.shape, (f'Shape mismatch: {result.shape} '
+                                                   f'!= {expected_result.shape} (expected)')
+    assert np.allclose(expected_result, result), 'Result mismatch'
+

@@ -1,6 +1,9 @@
 import io
 import pathlib
+import textwrap
 import collections
+import json
+import warnings
 import zipfile as zpf
 import numpy as np
 
@@ -9,7 +12,10 @@ import nrrd
 from typing import Union, Dict, List, Any, Tuple, Callable, Iterable
 from PIL import Image
 
-from reader.tagged_data import RawData, LabelData
+from reader.tagged_data import RawData, LabelData, WeightData
+from reader.utils import (expand_to_4D, reduce_from_4D,
+                          ras_to_ijk_matrix, lps_to_ijk_matrix)
+from reader.mkparser import extract_fiducial_markups
 
 PathLike = Union[str, pathlib.Path]
 ZipMember = Union[str, zpf.ZipInfo]
@@ -64,37 +70,70 @@ class MRBFile(zpf.ZipFile):
         data_members = self.get_member_info()
         self.raw_members = data_members['raw']
         self.segmentation_members = data_members['seg']
+        self.landmark_members = data_members['lmrk']
+
+    
+    def __str__(self) -> str:
+        pretty_str = (f'MRBFile(filepath={self.filepath.resolve()}, '
+                      f'{len(self.raw_members)} raw members, '
+                      f'{len(self.segmentation_members)} segment members, '
+                      f'{len(self.landmark_members)} landmark members)')
+        return pretty_str
+        
+    
+    def __repr__(self) -> str:
+        base_repr = f"MRBFile(filepath='{self.filepath.resolve()}', mode='{self.mode}')"
+        raws_repr = '\n'.join(
+            (f'Raw members ({len(self.raw_members)} total)', self.pretty_string(self.raw_members))
+        )
+        seg_repr = '\n'.join(
+            (f'Segment members ({len(self.segmentation_members)} total)', self.pretty_string(self.segmentation_members))
+        )
+        lmrk_repr = '\n'.join(
+            (f'Landmark members ({len(self.landmark_members)} total)', self.pretty_string(self.landmark_members))
+        )
+        member_repr = '\n'.join((raws_repr, seg_repr, lmrk_repr))
+        return '\n'.join((base_repr, member_repr))
+
+
 
 
     def get_member_info(self):
         """
         Get the dict of ZipInfo instances that describe data members of the ZipFile.
-        The members are subdivided between raw data members and segmentation members
-        based on file suffix.
+        The members are subdivided between raw data members, segmentation members
+        and landmark members based on file suffix.
 
         Example:
         'raw' : [<ZipInfo_raw_1>, <ZipInfo_raw_2>, ...]
         'seg' : [<ZipInfo_seg_1>, <ZipInfo_seg_2>, ...]
+        'lmrk' : [<ZipInfo_seg_1>, <ZipInfo_seg_2>, ...]
+
 
 
         Returns
         -------
 
         data_members : Dict[str, List]
-            Dict with keys 'raw' and 'seg' that hold
+            Dict with keys 'raw', 'seg' and 'lmrk' that hold
             the member lists as values.
             The member lists consist of zipfile.ZipInfo objects.
         """
         segmentation_members = []
         raw_members = []
+        landmark_members = []
 
         for zinfo in self.infolist():
             if zinfo.filename.endswith('.seg.nrrd'):
                 segmentation_members.append(zinfo)
             elif zinfo.filename.endswith('.nrrd'):
                 raw_members.append(zinfo)
+            elif zinfo.filename.endswith('.mrk.json'):
+                landmark_members.append(zinfo)
 
-        return {'raw' : raw_members, 'seg' : segmentation_members}
+        return {'raw' : raw_members,
+                'seg' : segmentation_members,
+                'lmrk' : landmark_members}
     
 
     def read_raws(self) -> List[RawData]:
@@ -136,6 +175,11 @@ class MRBFile(zpf.ZipFile):
         local_read_fn = self.read_nrrd
         segmentation_datas = self._read_members(self.segmentation_members, local_read_fn)
         return [LabelData(*elem) for elem in segmentation_datas]
+
+    
+    def read_weights(self) -> List[WeightData]:
+        """Read weight data. Currently placeholder."""
+        return []
     
 
     def _read_members(self,
@@ -184,4 +228,81 @@ class MRBFile(zpf.ZipFile):
         NII file read method.
         """ 
         raise NotImplementedError
+
     
+    def read_landmarks(self) -> List[Dict]:
+        """
+        Read and parse markup data from a JSON-typed MRBFile member.
+        """
+        landmarks = []
+        for lmrk_member in self.landmark_members:
+            landmark_dicts = self._read_landmark_member(lmrk_member)
+            landmarks.extend(landmark_dicts)
+        return landmarks
+
+    
+    def _read_landmark_member(self, member: ZipMember) -> List[Dict]:
+        """
+        Read and process a landmark member.
+        Loads the raw data JSON from the MRB/ZIP file and
+        parses its content into a list of landmark information dicts.
+        IJK position information is added via the transformation deduced from the
+        `RawData` object metadata.
+        
+        Parameters
+        ----------
+
+        member: ZipMember
+            The ZIP-internal path or info object that is to be loaded.
+        
+        Returns
+        -------
+
+        landmark_dicts: List[Dict]
+            The parsed landmark information
+        """
+        if len(self.raw_members) > 1:
+            warnings.warn(
+                ('MRBFile has more than one raw member! '
+                 'Transformation RAS/LPS to IJK is deduced from first member. '
+                 'If metadata is incongruent, faulty results may occur.')
+            )
+        # load first raw member to access spatial coordinate system information
+        raw_0 = RawData(*self._read_members(self.raw_members, read_fn=self.read_nrrd)[0])
+        space_kwargs = {
+            'space_directions' : raw_0.metadata['space directions'],
+            'space_origin' : raw_0.metadata['space origin']
+        }
+        # load the landmark data from MRB Zipfile
+        landmark_json = io.BytesIO(self.read(member))
+        landmark_dicts = extract_fiducial_markups(json.load(landmark_json))
+        # include IJK coordinate positional information
+        for element in landmark_dicts:
+            # transformation matrix depends on 3D basis definition
+            if element['coordsys'] == 'LPS':
+                transform_mat = lps_to_ijk_matrix(**space_kwargs)
+            elif element['coordsys'] == 'RAS':
+                transform_mat = ras_to_ijk_matrix(**space_kwargs)
+            else:
+                raise RuntimeError(
+                    f'Invalid coordinate system specification: < {element["coordsys"]} >'
+                )
+            # XYZ position in homogenous coordinates. Hint: JSON package does not cast to np.ndarray
+            xyz_pos_hom_cord = expand_to_4D(np.array(element['xyz_position']))
+            ijk_position = reduce_from_4D(transform_mat @ xyz_pos_hom_cord)
+            element['ijk_position'] = np.rint(ijk_position).astype(np.int32)
+
+        return landmark_dicts
+
+    
+
+    @staticmethod
+    def pretty_string(obj_coll: List[Any]) -> str:
+        """
+        Build an indented string represenation of the objects in the
+        given list.
+        """
+        pretty_str = '\n'.join(
+            (str(obj) for obj in obj_coll)
+        )
+        return textwrap.indent(pretty_str, prefix='  - ')

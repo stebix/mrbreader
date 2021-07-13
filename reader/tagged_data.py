@@ -5,7 +5,7 @@ import numpy as np
 
 from typing import Dict, List, Tuple, Iterable, Any, NewType
 from reader.segment_info import SegmentInfo
-from reader.utils import relabel
+from reader.utils import relabel, lps_to_ijk_matrix, ras_to_ijk_matrix
 
 """
 The parsing of files originating from the manual segmentation process
@@ -71,7 +71,23 @@ class RawData(TaggedData):
     Tagged CT raw data.
     Usually just a 3D scalar NumPy array (data) and an OrderedDict (metadata).
     """
-    pass
+    space_origin: np.ndarray
+    space_directions: np.ndarray
+    lps_to_ijk_matrix: np.ndarray
+    ras_to_ijk_matrix: np.ndarray
+
+    def __init__(self, data: np.ndarray, metadata: Any) -> None:
+        super(RawData, self).__init__(data, metadata)
+            
+        # 3D space origin translation vector as defined by DICOM / 3DSlicer standard.
+        self.space_origin = self.metadata['space origin']
+        # 3 x 3 space direction matrix as defined by DICOM / 3DSlicer standard.
+        self.space_directions = self.metadata['space directions']
+        self.lps_to_ijk_matrix = lps_to_ijk_matrix(space_directions=self.space_directions,
+                                                   space_origin=self.space_origin)
+        self.ras_to_ijk_matrix = ras_to_ijk_matrix(space_directions=self.space_directions,
+                                                   space_origin=self.space_origin)
+
 
 
 
