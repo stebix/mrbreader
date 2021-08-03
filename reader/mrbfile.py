@@ -299,7 +299,7 @@ class MRBFile(zpf.ZipFile):
     @staticmethod
     def pretty_string(obj_coll: List[Any]) -> str:
         """
-        Build an indented string represenation of the objects in the
+        Build an indented string representation of the objects in the
         given list.
         """
         pretty_str = '\n'.join(
