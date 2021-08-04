@@ -2,6 +2,7 @@
 Homogenization template for 3 class semantic segmentation of human cochlea CT scans.
 """
 
+# synonym sets for different anatomical segmentation structures
 
 cochlea_equivalents = frozenset(
     ('cochlea', 'Cochlea', 'chl', 'Schnecke', 'schnecke')
@@ -15,6 +16,7 @@ canals_equivalents = frozenset(
      'bogen', 'Bogengnge', 'bogengnge')
 )
 
+# templates to fit the segmentation metadata to
 template = {
     cochlea_equivalents : {
         'name' : 'cochlea',
@@ -35,4 +37,5 @@ template = {
         'label_value' : 3
     }
 }
+
 

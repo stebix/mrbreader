@@ -15,7 +15,7 @@ from PIL import Image
 from reader.tagged_data import RawData, LabelData, WeightData
 from reader.utils import (expand_to_4D, reduce_from_4D,
                           ras_to_ijk_matrix, lps_to_ijk_matrix)
-from reader.mkparser import extract_fiducial_markups
+from reader.mkparser import extract_fiducial_markups, fit_to_template
 
 PathLike = Union[str, pathlib.Path]
 ZipMember = Union[str, zpf.ZipInfo]
@@ -291,6 +291,8 @@ class MRBFile(zpf.ZipFile):
             xyz_pos_hom_cord = expand_to_4D(np.array(element['xyz_position']))
             ijk_position = reduce_from_4D(transform_mat @ xyz_pos_hom_cord)
             element['ijk_position'] = np.rint(ijk_position).astype(np.int32)
+            # transform ddictionary to match default template for `id` and `label`
+            fit_to_template(element)
 
         return landmark_dicts
 
