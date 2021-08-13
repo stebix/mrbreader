@@ -106,7 +106,6 @@ class HDF5Exporter:
         with h5py.File(save_path, mode=hdf5_write_mode) as wfile:
             for idx, tagged_data_tuple in enumerate(total_tagged_datas):
                 internal_path_tuple = self.construct_internal_paths(idx)
-                print(tagged_data_tuple)
                 for int_path, tgdat in zip(internal_path_tuple, tagged_data_tuple):
                     if tgdat is None:
                         continue

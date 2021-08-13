@@ -84,10 +84,9 @@ def main():
 
         mrbfile = MRBFile(source_file)
 
-        exporter.store(
+        exporter.store_mrb(
             save_path=target_dir / hdf_fname,
-            tagged_raw_data=mrbfile.read_raws(),
-            tagged_label_data=mrbfile.read_segmentations()
+            mrbfile=mrbfile
         )
 
 
