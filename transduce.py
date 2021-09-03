@@ -6,6 +6,8 @@ from typing import Union, List, Tuple
 from reader.mrbfile import MRBFile
 from reader.export import HDF5Exporter
 
+# NOTE: Ver 1.0 2021-09-03
+
 
 def _flatten(l, container_types=(List, Tuple)):
     """
