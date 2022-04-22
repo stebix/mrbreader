@@ -114,6 +114,11 @@ class LabelData(TaggedData):
         }
         # TODO: this is sloooow due to numpy.unique!
         # self._check_consistency()
+
+        # make basal information about type, dim, space, etc. available
+        self.base_metadata = {
+            key : value for key, value in metadata.items() if not key.startswith('Segment')
+        }
     
 
     def _check_consistency(self) -> None:

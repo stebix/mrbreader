@@ -154,7 +154,21 @@ class MRBFile(zpf.ZipFile):
         # (data, metadata) - (np.ndarray, collections.OrderedDict)
         raw_datas = self._read_members(self.raw_members, local_read_fn)
         return [RawData(*elem) for elem in raw_datas]
+    
 
+    def read_stringmatched_raws(self, matchstring: str) -> List[RawData]:
+        """
+        Read and return raw data members of the MRB file whose (internal)
+        filename contains the indicated matchstring.
+        """
+        local_read_fn = self.read_nrrd
+        matching_members = []
+        for raw_zipinfo in self.raw_members:
+            if matchstring in raw_zipinfo.filename:
+                matching_members.append(raw_zipinfo)
+
+        matching_raw_data = self._read_members(matching_members, local_read_fn)
+        return [RawData(*elem) for elem in matching_raw_data]
 
     
     def read_segmentations(self) -> List[LabelData]:

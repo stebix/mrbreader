@@ -78,9 +78,38 @@ class HDF5Exporter:
         self.force_write = force_write
         self.store_metadata = store_metadata
 
-    
+
 
     def store_mrb(self, save_path: PathLike, mrbfile: MRBFile) -> None:
+        """
+        Export/store a given `MRBFile` object as a HDF5 file on disk to the
+        location given by `save_path`.
+        """
+        save_path = pathlib.Path(save_path)
+
+        if save_path.is_file() and self.force_write:
+            hdf5_write_mode = 'w'
+        elif save_path.is_file() and not self.force_write:
+            err_msg = f'File already existing at location: < {save_path.absolute()} >' 
+            raise FileExistsError(err_msg)
+        elif save_path.is_dir():
+            raise IsADirectoryError(f'Save path points to a directory: {save_path.resolve()}')
+        else:
+            hdf5_write_mode = 'x'
+
+        with h5py.File(save_path, mode=hdf5_write_mode) as filehandle:
+
+            self.store_raws(mrbfile.read_raws(), filehandle)
+            self.store_labels(mrbfile.read_segmentations(), filehandle)
+            self.store_weights(mrbfile.read_weights(), filehandle)
+            self.store_landmarks(mrbfile.read_landmarks(), filehandle)
+            
+        return None
+
+
+    
+
+    def store_mrb_deprecated(self, save_path: PathLike, mrbfile: MRBFile) -> None:
         """
         Export/store a given `MRBFile` object as a HDF5 file on disk to the
         location given by `save_path`.
@@ -186,6 +215,51 @@ class HDF5Exporter:
                     if self.store_metadata:
                         for key, value in tagged_data.metadata.items():
                             writefile[int_path].attrs[key] = value
+
+    
+    def store_raws(self, raws: Sequence[RawData], handle: h5py.File) -> None:
+        """Store raw data into the open HDF5 file"""
+        for idx, raw in enumerate(raws):
+            internal_path = '/'.join((self.raw_internal_grpname, self.raw_internal_dsetname)) + str(idx)
+            handle[internal_path] = raws.data
+            if self.store_metadata:
+                for key, value in raw.metadata.items():
+                    handle[internal_path].attrs[key] = value
+
+
+    def store_labels(self, labels: Sequence[LabelData], handle: h5py.File) -> None:
+        """Store label data into the open HDF5 file"""
+        for idx, label in enumerate(labels):
+            internal_path = '/'.join((self.label_internal_grpname, self.label_internal_dsetname)) + str(idx)
+            handle[internal_path] = label.data
+
+            if self.store_metadata:
+                for key, value in label.metadata.items():
+                    handle[internal_path].attrs[key] = value
+
+                for key, value in label.base_metadata.items():
+                    handle[internal_path].attrs[key] = value
+    
+
+    def store_weights(self, weights: Sequence[WeightData], handle: h5py.File) -> None:
+        # passtrough if no weights are present ...
+        if len(weights) == 0:
+            return
+        else:
+            raise NotImplementedError('Not yet, Kameraden!')
+
+
+    def store_landmarks(self, landmarks: Sequence[Dict], handle: h5py.File) -> None:
+        """
+        Store landmark dictionaries as attributes to placeholder datasets with 
+        internal paths of the form 'landmark/landmark-0'
+        """
+        lmrk_grp = handle.create_group(self.landmark_internal_grpname)
+        for idx, landmark in enumerate(landmarks):
+            dset_name = ''.join((self.landmark_internal_dsetname, str(idx)))
+            dset = lmrk_grp.create_dataset(dset_name, data=h5py.Empty(dtype='f'))
+            for k, v in landmark.items():
+                dset.attrs[k] = v
 
 
     def construct_internal_paths(self, idx: int) -> Tuple[str, str, str]:

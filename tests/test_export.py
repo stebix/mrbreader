@@ -5,18 +5,30 @@ import h5py
 from reader.export import HDF5Exporter
 
 
+class MockRawData:
+
+    def __init__(self, data, metadata):
+        self.data = data
+        self.metadata = metadata
+
+
 
 class Test_HDF5Exporter:
 
 
-    def test_store_single_raw(self, mock_tagged_raw_data, tmp_path):
+    def test_store_single_raw(self, tmp_path):
         internal_path = 'raw/raw-0'
         exporter = HDF5Exporter(store_metadata=True)
         test_file_path = tmp_path / 'store_only_raw_testfile.hdf5'
 
+        rawdata = MockRawData(
+            data=np.random.default_rng().normal(size=(10, 10, 10)),
+            metadata={'tag0' : 42, 'tag1' : 'fascinating', 'tag3' : 3.141}
+        )
+
         # first store file
         exporter.store(save_path=test_file_path,
-                       tagged_raw_data=[mock_tagged_raw_data])
+                       tagged_raw_data=[rawdata])
 
         # read file to check consistency
         recovered_metadata = {}
@@ -26,35 +38,40 @@ class Test_HDF5Exporter:
                 recovered_metadata[key] = value
 
         # check consistency
-        expected_metadata = mock_tagged_raw_data.metadata
-        expected_num_data = mock_tagged_raw_data.data
-        assert np.array_equal(recovered_num_data, mock_tagged_raw_data.data)
+        expected_metadata = rawdata.metadata
+        expected_num_data = rawdata.data
+        assert np.array_equal(recovered_num_data, rawdata.data)
         for key in expected_metadata.keys():
             assert key in recovered_metadata.keys(), f'Missing key! {key} not present'
             assert recovered_metadata[key] == expected_metadata[key], f'Value mismatch for {key}'
 
 
-    def test_store_multiple_raw(self, mock_tagged_raw_data, tmp_path):
+    def test_store_multiple_raw(self, tmp_path):
         internal_paths = ['raw/raw-0', 'raw/raw-1', 'raw/raw-2']
         exporter = HDF5Exporter(store_metadata=True)
         test_file_path = tmp_path / 'store_only_raw_testfile.hdf5'
 
+        raws = [MockRawData(data=np.random.default_rng().normal(size=(10, 10, 10)),
+                            metadata={'tag0' : 42, 'tag1' : 'fascinating', 'tag3' : 3.141})
+                for _ in range(3)
+        ]
         # first store file
         exporter.store(save_path=test_file_path,
-                       tagged_raw_data=[mock_tagged_raw_data] * 3)
+                       tagged_raw_data=raws)
 
-        expected_metadata = mock_tagged_raw_data.metadata
-        expected_num_data = mock_tagged_raw_data.data
         # read file to check consistency
-        for internal_path in internal_paths:
+        for idx, internal_path in enumerate(internal_paths):
             recovered_metadata = {}
             with h5py.File(test_file_path, mode='r') as readfile:
                 recovered_num_data = readfile[internal_path][...]
                 for key, value in readfile[internal_path].attrs.items():
                     recovered_metadata[key] = value
 
+            expected_metadata = raws[idx].metadata
+            expected_num_data = raws[idx].data
+
             # check consistency
-            assert np.array_equal(recovered_num_data, mock_tagged_raw_data.data)
+            assert np.array_equal(recovered_num_data, expected_num_data)
             for key in expected_metadata.keys():
                 assert key in recovered_metadata.keys(), f'Missing key! {key} not present'
                 assert recovered_metadata[key] == expected_metadata[key], f'Value mismatch for {key}'
