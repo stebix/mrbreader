@@ -15,7 +15,7 @@ The exporting structure is geared towards direct use of the HDF5 files
 as training data input for the segmentation_net project.
 """
 
-PathLike = NewType('PathLike', Union[str, pathlib.Path, None])
+PathLike = Union[str, pathlib.Path, None]
 
 # TODO: Refactor this approach ...
 
