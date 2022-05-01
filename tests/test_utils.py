@@ -12,7 +12,8 @@ from reader.utils import (is_binary, is_onehot,
                           lps_to_ijk_matrix,
                           ras_to_ijk_matrix,
                           expand_to_4D,
-                          reduce_from_4D)
+                          reduce_from_4D,
+                          extent_string_as_points)
 
 
 @pytest.fixture
@@ -75,6 +76,34 @@ def test_is_binary(dtype):
     # random array: may be binary by chance, but this is unlikely ;)
     randarr = np.random.default_rng().normal(size=testshape)
     assert not is_binary(randarr)
+
+
+
+
+class Test_extent_string_as_points:
+
+    def test_valid_input(self):
+        input_string = '12 50 125 539 26 121'
+        expected_start = np.array([12, 125, 26])
+        expected_stop = np.array([50, 539, 121])
+        result_start, result_stop = extent_string_as_points(input_string)
+        assert np.array_equal(result_start, expected_start)
+        assert np.array_equal(result_stop, expected_stop)
+    
+
+    def test_malformed_input_missing_coordinate(self):
+        # missing one coordinate
+        malformed_string = '12 50 125 539 123'
+        with pytest.raises(ValueError):
+            _ = extent_string_as_points(malformed_string)
+
+
+    def test_malformed_input_not_castable(self):
+        # non integer castable value
+        malformed_string = '12 50 125 539 123 400a'
+        with pytest.raises(ValueError):
+            _ = extent_string_as_points(malformed_string)
+
 
 
 class Test_convert_to_intlabel:

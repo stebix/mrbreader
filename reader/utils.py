@@ -38,6 +38,23 @@ def is_onehot(array: np.ndarray, axis: int = 0) -> bool:
     else:
         return False
 
+    
+def extent_string_as_points(extent: str) -> Tuple[np.ndarray]:
+    """
+    Interpret an extent string consisting of six integer coordinates,
+    like '12 50 125 539 26 121' as a 2-tuple of 3D points:
+    start -> [12, 125, 26]    stop -> [50, 539, 121]
+    """
+    # Clumsy, but explicit unpacking to enforce existence of six coordinates
+    (ax0_start, ax0_stop,
+     ax1_start, ax1_stop,
+     ax2_start, ax2_stop) = (int(c) for c in extent.split(' '))
+    start = np.array([ax0_start, ax1_start, ax2_start])
+    stop = np.array([ax0_stop, ax1_stop, ax2_stop])
+    return (start, stop)
+
+
+
 
 def convert_to_intlabel(array: np.ndarray) -> np.ndarray:
     """
@@ -213,6 +230,20 @@ def ras_to_ijk_matrix(space_directions: np.ndarray,
     ras_to_lps = np.diag([-1, -1, 1, 1])
     # composite matrix acts on vector on right side
     return lps_to_ijk @ ras_to_lps
+
+
+def is_4D_column_vector(vector: np.ndarray) -> bool:
+    """
+    Checks if vector candidate is 4D column vector of the form
+    [[x]
+     [y]
+     [z]]    with shape (4, 1)
+    """
+    if not isinstance(vector, np.ndarray):
+        vector = np.asarray(vector)
+    if vector.shape == (4, 1):
+        return True
+    return False
 
 
 def expand_to_4D(vector: np.ndarray) -> np.ndarray:

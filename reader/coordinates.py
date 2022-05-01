@@ -196,7 +196,7 @@ def ijk_to_xyz_matrix_from_metadata(metadata: Dict, target_coordsystem: str) -> 
     spac_ori = metadata['space origin']
 
     target_coordsystem = target_coordsystem.lower()
-    assert target_coordsystem in ('lps', 'ras'), f'Coordinate system must be RAS or LPS. Got: {coordsystem}'
+    assert target_coordsystem in ('lps', 'ras'), f'Coordinate system must be RAS or LPS. Got: {target_coordsystem}'
     base_coordsystem = 'lps' if metadata['space'] == 'left-posterior-superior' else 'ras'
 
     if base_coordsystem == target_coordsystem:

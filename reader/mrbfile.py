@@ -169,6 +169,14 @@ class MRBFile(zpf.ZipFile):
 
         matching_raw_data = self._read_members(matching_members, local_read_fn)
         return [RawData(*elem) for elem in matching_raw_data]
+    
+
+    def _read_segmentations(self) -> List:
+        """
+        Return list of segmentation data members read via NRRD without casting
+        them as `LabelData` instances. 
+        """
+        return self._read_members(self.segmentation_members, self.read_nrrd)
 
     
     def read_segmentations(self) -> List[LabelData]:
@@ -186,9 +194,7 @@ class MRBFile(zpf.ZipFile):
             LabelData attributes: data, metadata, infos
 
         """
-        local_read_fn = self.read_nrrd
-        segmentation_datas = self._read_members(self.segmentation_members, local_read_fn)
-        return [LabelData(*elem) for elem in segmentation_datas]
+        return [LabelData(*elem) for elem in self._read_segmentations()]
 
     
     def read_weights(self) -> List[WeightData]:
@@ -305,7 +311,7 @@ class MRBFile(zpf.ZipFile):
             xyz_pos_hom_cord = expand_to_4D(np.array(element['xyz_position']))
             ijk_position = reduce_from_4D(transform_mat @ xyz_pos_hom_cord)
             element['ijk_position'] = np.rint(ijk_position).astype(np.int32)
-            # transform ddictionary to match default template for `id` and `label`
+            # transform dictionary to match default template for `id` and `label`
             fit_to_template(element)
 
         return landmark_dicts

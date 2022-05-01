@@ -183,8 +183,8 @@ class SegmentInfo:
         if isinstance(extent_candidate, str):
             extent_candidate = extent_candidate.split(' ')
         
-        assert len(extent_candidate) == 6, 'Expecting 6 indices for extent specification in 3D'
         extent = tuple(int(idx) for idx in extent_candidate)
+        assert len(extent_candidate) == 6, 'Expecting 6 indices for extent specification in 3D'
         self._extent = extent
         return None
 
