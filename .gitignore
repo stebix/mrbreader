@@ -7,6 +7,9 @@
 *.h5
 *.hdf
 
+# Vs code
+.vscode/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
