@@ -1,3 +1,13 @@
 {
-    "python.pythonPath": "C:\\Users\\Jannik\\Anaconda3\\envs\\pydicom\\python.exe"
+    "python.pythonPath": "C:\\Users\\Jannik\\Anaconda3\\envs\\deeplearn\\python.exe",
+    "python.testing.pytestArgs": [
+        "."
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "cSpell.words": [
+        "ifies",
+        "Roification",
+        "roispec"
+    ]
 }
