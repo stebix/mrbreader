@@ -132,7 +132,12 @@ def select_by_names(segments: dict, desired_segment_names: Sequence[str]) -> tup
     name_to_ID = {attrdict['Name'] : ID for ID, attrdict in segments.items()}
     selected = {}
     for name in desired_segment_names:
-        ID = name_to_ID[name]
+        try:
+            ID = name_to_ID[name]
+        except KeyError:
+            message = (f'Segment name "{name}" not found. Offending segments '
+                       f'dict: {segments}')
+            raise KeyError(message)
         selected[ID] = segments.pop(ID)
     # Recast as standard dict: `segments` is often a defaultdict.
     deselected = dict(segments)
@@ -225,12 +230,15 @@ def sift_lowest_layer(segments: dict) -> dict:
 
 def sift_lowest_layer_labelarray(labelarray: np.ndarray) -> np.ndarray:
     """Extract lowest layer of the multilayer labelarray"""
-    if not labelarray.ndim == 4:
+    if labelarray.ndim == 3:
+        return labelarray
+    elif labelarray.ndim == 4:
+        return labelarray[0, ...]
+    else:
         message = (f'attempting to extract lowest layer from '
                    f'labelarray with ndim {labelarray.ndim}!'
-                   f'Labelarray must have ndim 4')
+                   f'Labelarray must have ndim 3 or 4')
         raise ValueError(message)
-    return labelarray[0, ...]
 
 
 def compute_3D_extent(volume: np.ndarray) -> np.ndarray:
@@ -297,6 +305,7 @@ class Sifter:
         if self.delete_multilayer:
             segments = sift_lowest_layer(segments)
             labelarray = sift_lowest_layer_labelarray(labelarray)
+            generals['sizes'] = labelarray.shape
         # Validates uniqueness of label values, ID strings and names.
         is_valid, message = is_valid_segments_dict(segments)
         if not is_valid:

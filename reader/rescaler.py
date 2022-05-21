@@ -44,8 +44,12 @@ class Rescaler:
     rescaled_voxel_size : float
         Must have same unit as rescaled voxel size.
 
-    interpolation_order : int
-        Order of the interpolation spline.
+    raw_interpolation_order : int
+        Order of the interpolation spline applied to raw data.
+    
+    label_interpolation_order : int
+        Order of the interpolation spline applied to integer label data.
+
 
     mode : str, optional
         Determines the how the input array is extended beyond
@@ -58,14 +62,16 @@ class Rescaler:
     def __init__(self,
                  original_voxel_size: float,
                  rescaled_voxel_size: float,
-                 interpolation_order: int,
+                 raw_interpolation_order: int,
+                 label_interpolation_order: int,
                  mode: str = 'reflect',
                  dtype: np.dtype = np.float32,
                  device: str = 'cpu') -> None:
 
         self._original_voxel_size = original_voxel_size
         self._rescaled_voxel_size = rescaled_voxel_size
-        self._interpolation_order = interpolation_order
+        self._raw_interpolation_order = raw_interpolation_order
+        self._label_interpolation_order = label_interpolation_order
         self._mode = mode
         self.dtype = dtype
         self._rescaling_factor = rescaled_voxel_size / original_voxel_size
@@ -93,8 +99,22 @@ class Rescaler:
         """
         assert array.ndim == 3, f'expected 3D array, got ndim = {array.ndim}'
         array = array.astype(self.dtype)
+        interpolation_order = self._raw_interpolation_order
         result = self._rescale_fn(array, self.original_voxel_size, self.rescaled_voxel_size,
-                                  self.interpolation_order, self.mode)
+                                  interpolation_order, self.mode)
+        return result
+    
+
+    def rescale_label_volume(self, array: np.ndarray) -> np.ndarray:
+        """
+        Rescale a 3D label volume. This uses a locally set interpolation order to enhance
+        interpolation of crisp integer labels. TODO: Improve this. 
+        """
+        assert array.ndim == 3, f'expected 3D array, got ndim = {array.ndim}'
+        array = array.astype(self.dtype)
+        interpolation_order = self._label_interpolation_order
+        result = self._rescale_fn(array, self.original_voxel_size, self.rescaled_voxel_size,
+                                  interpolation_order, self.mode)
         return result
     
 
@@ -189,9 +209,13 @@ class Rescaler:
         return self._rescaling_factor
 
     @property
-    def interpolation_order(self) -> int:
-        return self._interpolation_order
-    
+    def raw_interpolation_order(self) -> int:
+        return self._raw_interpolation_order
+
+    @property
+    def label_interpolation_order(self) -> int:
+        return self._label_interpolation_order
+
     @property
     def mode(self) -> str:
         return self._mode
@@ -220,3 +244,34 @@ class Rescaler:
             'mode' : self.mode
         }
         return config
+
+
+
+class DummyRescaler(Rescaler):
+    """
+    Dummy rescaler does not rescale anything :-)
+    """
+    def __init__(self) -> None:
+        super().__init__(original_voxel_size=1, rescaled_voxel_size=1,
+                         interpolation_order=0, mode=None, dtype=None, device='cpu')
+    
+    def rescale_volume(self, array: np.ndarray) -> np.ndarray:
+        return array
+
+    def rescale_label_volume(self, array: np.ndarray) -> np.ndarray:
+        return array
+
+    def rescale_general_metadata(self, metadata: dict) -> dict:
+        return metadata
+    
+    def rescale_ijk_position(self, position: np.ndarray) -> np.ndarray:
+        return position
+
+    def rescale_landmarks(self, landmark_dicts: Sequence[Dict]) -> Sequence[Dict]:
+        return landmark_dicts
+
+    def rescale_segment_infos(self, infos: dict) -> dict:
+        return infos
+
+    def rescale_segment_metadata(self, metadata: dict) -> dict:
+        return metadata

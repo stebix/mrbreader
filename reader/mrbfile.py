@@ -156,15 +156,21 @@ class MRBFile(zpf.ZipFile):
         return [RawData(*elem) for elem in raw_datas]
     
 
-    def read_stringmatched_raws(self, matchstring: str) -> List[RawData]:
+    def read_stringmatched_raws(self, matchstring: str,
+                                case_sensitive: bool = False) -> List[RawData]:
         """
         Read and return raw data members of the MRB file whose (internal)
         filename contains the indicated matchstring.
         """
+        if not case_sensitive:
+            matchstring = matchstring.lower()
         local_read_fn = self.read_nrrd
         matching_members = []
         for raw_zipinfo in self.raw_members:
-            if matchstring in raw_zipinfo.filename:
+            filename = raw_zipinfo.filename
+            if not case_sensitive:
+                filename = raw_zipinfo.filename.lower()
+            if matchstring in filename:
                 matching_members.append(raw_zipinfo)
 
         matching_raw_data = self._read_members(matching_members, local_read_fn)

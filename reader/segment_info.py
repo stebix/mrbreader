@@ -175,8 +175,9 @@ class SegmentInfo:
         -> (minI, maxI, minJ, maxJ, minZ, maxZ)
         defining extent of non-empty region within the segment.
         """
-        none_like = [None, 'none']
-        if extent_candidate in none_like:
+        # none_like = [None, 'none']
+        # TODO: fix this awful mess 
+        if extent_candidate is None or extent_candidate == 'none':
             self._extent = 'none'
             return None
 

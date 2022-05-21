@@ -1,12 +1,13 @@
 import logging
 
 from pathlib import Path, PurePosixPath
-from typing import Dict, List, Sequence
+from typing import Dict, List, Sequence, Union
 
 import h5py
 
 from reader.mrbfile import MRBFile
 from reader.rescaler import Rescaler
+from reader.roi import ROISpec, Roifier
 from reader.sifter import Sifter, rollback_metadata_format
 from reader.tagged_data import LabelData, RawData
 from reader.hdf5tools import (create_dataset_from_path,
@@ -25,6 +26,8 @@ class ExporterSBR:
                  raw_selector: str,
                  sifter: Sifter,
                  rescaler: Rescaler,
+                 crop_to_ROI: bool = True,
+                 ROI_pad_width: int = 100,
                  force_write: bool = False,
                  store_metadata: bool = True) -> None:
         
@@ -35,6 +38,10 @@ class ExporterSBR:
             )
         self.rescaler = rescaler
         self.sifter = sifter
+        # Roifier is set functionally inside `get_label` method.
+        self.roifier = None
+        self.crop_to_ROI = crop_to_ROI
+        self.ROI_pad_width = ROI_pad_width
         # Saving settings
         self.raw_policy = raw_selector
         self.force_write = force_write
@@ -57,6 +64,14 @@ class ExporterSBR:
             raise IsADirectoryError(message)
 
     
+    def init_roifier(self, extent: Union[str, Sequence[int]],
+                     original_shape: Sequence[int]) -> None:
+        roispec = ROISpec.from_extent(extent, self.ROI_pad_width,
+                                      original_shape)
+        self.roifier = Roifier(roispec)
+
+
+    
     def get_raw(self, mrbfile: MRBFile):
         if self.raw_policy == 'embedded':
             raw = self.get_matching_raw_data('CBCT_Embedded', mrbfile)
@@ -73,6 +88,14 @@ class ExporterSBR:
             raise RuntimeError(f'retrieved {len(label)} label arrays, expected only one')
         # Squeeze list and split the single (array, header) tuple.
         labelarray, labelheader, generals = self.sifter.sift(label[0][0], label[0][1])
+        # Get extent from any attribute dict.
+        extent = next(iter(labelheader.values()))['Extent']
+        original_shape = generals['sizes']
+        self.init_roifier(extent, original_shape)
+        if self.crop_to_ROI:
+            labelheader = self.roifier.roify_label_segment_metadata(labelheader)
+            generals = self.roifier.roify_label_general_metadata(generals)
+            labelarray = self.roifier.roify_volume(labelarray)
         # During the processing pipeline, we excised the `SegmentN_` prefix.
         # LabelData however relies on this during its parsing operation, so we have
         # to put it back in.
@@ -82,7 +105,8 @@ class ExporterSBR:
 
     
     def get_landmarks(self, mrbfile: MRBFile):
-        return mrbfile.read_landmarks()
+        landmarks = mrbfile.read_landmarks()
+        return landmarks
 
 
     def export(self, mrbfile: MRBFile, savepath: Path) -> None:
@@ -96,12 +120,15 @@ class ExporterSBR:
         landmarks = self.get_landmarks(mrbfile)
 
         with h5py.File(savepath, mode=self._hdf5_write_mode) as handle:
-            self._export_raw(raw, handle)
             self._export_label(label, handle)
+            self._export_raw(raw, handle)
             self._export_landmarks(landmarks, handle)
         
     
     def _export_raw(self, raw: RawData, handle: h5py.File) -> None:
+        if self.crop_to_ROI:
+            raw.data = self.roifier.roify_volume(raw.data)
+            raw.metadata = self.roifier.roify_raw_metadata(raw.metadata)
         # Adjust voxel size in numerical data and metadata.
         rescaled_raw = self.rescaler.rescale_volume(raw.data)
         rescaled_metadata = self.rescaler.rescale_general_metadata(raw.metadata)
@@ -125,7 +152,7 @@ class ExporterSBR:
     def _export_label(self, label: LabelData, handle: h5py.File) -> None:
         """Separate export method: Stores both metadata and base metadata"""
         # Adjust voxel size in numerical data and metadata.
-        rescaled_label = self.rescaler.rescale_volume(label.data)
+        rescaled_label = self.rescaler.rescale_label_volume(label.data)
         rescaled_general_metadata = self.rescaler.rescale_general_metadata(label.base_metadata)
         rescaled_segment_metadata = self.rescaler.rescale_segment_metadata(label.metadata)
         # Write rescaled numpy.ndarray to HDF5 file
@@ -142,6 +169,8 @@ class ExporterSBR:
 
 
     def _export_landmarks(self, landmarks: Sequence[Dict], handle: h5py.File) -> None:
+        if self.crop_to_ROI:
+            landmarks = self.roifier.roify_landmarks(landmarks)
         rescaled_landmarks = self.rescaler.rescale_landmarks(landmarks)
         for i, landmark in enumerate(rescaled_landmarks):
             internal_path = generate_internal_path(stem='landmark', i=i)

@@ -7,7 +7,7 @@ import pytest
 from reader.mrbfile import MRBFile
 from reader.sieberexport import ExporterSBR
 from reader.sifter import Sifter
-from reader.rescaler import Rescaler
+from reader.rescaler import DummyRescaler, Rescaler
 
 def print_types(dictionary):
     for key, value in dictionary.items():
@@ -20,21 +20,25 @@ def print_types(dictionary):
 
 
 def test_full_integration():
-    raw_selector = 'unembedded'
-    rescaler = Rescaler(original_voxel_size=125,
-                        rescaled_voxel_size=99,
-                        interpolation_order=3,
+    raw_selector = 'embedded'
+    rescaler = Rescaler(original_voxel_size=0.125,
+                        rescaled_voxel_size=0.099,
+                        interpolation_order=2,
                         device='gpu')
+
+    # rescaler = DummyRescaler()
     sifter = Sifter.from_sieberdefaults()
 
     exporter = ExporterSBR(
         raw_selector=raw_selector,
         sifter=sifter,
-        rescaler=rescaler
+        rescaler=rescaler,
+        crop_to_ROI=True,
+        ROI_pad_width=30
     )
 
     fpath = Path(
-        'G:/Cochlea/dataset_sieber/landmarked/zeta-landmarked-bimodal.mrb'
+        'G:/Cochlea/dataset_sieber/landmarked/theta-landmarked-bimodal.mrb'
     )
 
     mrbfile = MRBFile(fpath)
@@ -47,7 +51,7 @@ def test_full_integration():
     # print('New Landmarks')
     # print(landmarks)
 
-    writepath = Path('G:/Cochlea/dataset_sieber/export-gpu.hdf5')
+    writepath = Path('G:/Cochlea/dataset_sieber/theta-pad30.hdf5')
 
     # label = exporter.get_label(mrbfile)
     # rescaled_general_metadata = exporter.rescaler.rescale_general_metadata(label.base_metadata)

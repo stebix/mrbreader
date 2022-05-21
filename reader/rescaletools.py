@@ -8,6 +8,7 @@ from typing import Sequence
 from reader.utils import expand_to_4D, reduce_from_4D
 
 
+
 def rescaled_shape(shape: tuple, rescaling_factor: float) -> tuple:
     """Compute new shape after rescaling an array by the given rescaling_factor."""
     return tuple(int(round(size*(1/rescaling_factor))) for size in shape)

@@ -221,7 +221,7 @@ class HDF5Exporter:
         """Store raw data into the open HDF5 file"""
         for idx, raw in enumerate(raws):
             internal_path = '/'.join((self.raw_internal_grpname, self.raw_internal_dsetname)) + str(idx)
-            handle[internal_path] = raws.data
+            handle[internal_path] = raw.data
             if self.store_metadata:
                 for key, value in raw.metadata.items():
                     handle[internal_path].attrs[key] = value

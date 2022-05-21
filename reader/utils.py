@@ -54,6 +54,15 @@ def extent_string_as_points(extent: str) -> Tuple[np.ndarray]:
     return (start, stop)
 
 
+def extent_string_as_array(extent: str) -> np.ndarray:
+    """
+    interrpret extent string and construct single six-element array
+    from it.
+    """
+    array = np.array([int(c) for c in extent.split(' ')])
+    if array.size != 6:
+        raise RuntimeError(f'could not find six integers in extent string "{extent}"')
+    return array
 
 
 def convert_to_intlabel(array: np.ndarray) -> np.ndarray:
