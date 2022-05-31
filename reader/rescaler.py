@@ -60,24 +60,24 @@ class Rescaler:
     """
 
     def __init__(self,
-                 original_voxel_size: float,
-                 rescaled_voxel_size: float,
+                 original_voxel_sizes: Sequence[float],
+                 rescaled_voxel_sizes: Sequence[float],
                  raw_interpolation_order: int,
                  label_interpolation_order: int,
                  mode: str = 'reflect',
                  dtype: np.dtype = np.float32,
                  device: str = 'cpu') -> None:
 
-        self._original_voxel_size = original_voxel_size
-        self._rescaled_voxel_size = rescaled_voxel_size
+        self._original_voxel_sizes = original_voxel_sizes
+        self._rescaled_voxel_sizes = rescaled_voxel_sizes
         self._raw_interpolation_order = raw_interpolation_order
         self._label_interpolation_order = label_interpolation_order
         self._mode = mode
         self.dtype = dtype
-        self._rescaling_factor = rescaled_voxel_size / original_voxel_size
+        self._rescaling_factors = np.array(rescaled_voxel_sizes) / np.array(original_voxel_sizes)
         self._matrix = create_rescaling_matrix(
-            original_voxel_size=original_voxel_size,
-            rescaled_voxel_size=rescaled_voxel_size
+            original_voxel_sizes=original_voxel_sizes,
+            rescaled_voxel_sizes=rescaled_voxel_sizes
         )
         self._inverse_matrix = np.linalg.inv(self.matrix)
         self._init_device(device)
@@ -100,7 +100,7 @@ class Rescaler:
         assert array.ndim == 3, f'expected 3D array, got ndim = {array.ndim}'
         array = array.astype(self.dtype)
         interpolation_order = self._raw_interpolation_order
-        result = self._rescale_fn(array, self.original_voxel_size, self.rescaled_voxel_size,
+        result = self._rescale_fn(array, self.original_voxel_sizes, self.rescaled_voxel_sizes,
                                   interpolation_order, self.mode)
         return result
     
@@ -113,7 +113,7 @@ class Rescaler:
         assert array.ndim == 3, f'expected 3D array, got ndim = {array.ndim}'
         array = array.astype(self.dtype)
         interpolation_order = self._label_interpolation_order
-        result = self._rescale_fn(array, self.original_voxel_size, self.rescaled_voxel_size,
+        result = self._rescale_fn(array, self.original_voxel_sizes, self.rescaled_voxel_sizes,
                                   interpolation_order, self.mode)
         return result
     
@@ -146,8 +146,10 @@ class Rescaler:
         # remap coordinate system strings, e.g.  'left-posterior-superior' -> 'LPS'
         system = COORDINATE_SYSTEMS_MAPPING[metadata['space']]
         # compute rescaled values
-        tentative_sizes = rescaled_shape(metadata['sizes'], self.rescaling_factor)
-        tentative_space_direction = create_space_direction_matrix(self.rescaled_voxel_size,
+        tentative_sizes = rescaled_shape(
+            metadata['sizes'], self.original_voxel_sizes, self.rescaled_voxel_sizes
+        )
+        tentative_space_direction = create_space_direction_matrix(self.rescaled_voxel_sizes,
                                                                   system)
         if metadata['dimension'] == 4:
             tentative_space_direction = np.concatenate(
@@ -197,16 +199,16 @@ class Rescaler:
 
 
     @property
-    def original_voxel_size(self) -> float:
-        return self._original_voxel_size
+    def original_voxel_sizes(self) -> float:
+        return self._original_voxel_sizes
     
     @property
-    def rescaled_voxel_size(self) -> float:
-        return self._rescaled_voxel_size
+    def rescaled_voxel_sizes(self) -> float:
+        return self._rescaled_voxel_sizes
     
     @property
-    def rescaling_factor(self) -> float:
-        return self._rescaling_factor
+    def rescaling_factors(self) -> float:
+        return self._rescaling_factors
 
     @property
     def raw_interpolation_order(self) -> int:
@@ -238,8 +240,8 @@ class Rescaler:
     def configuration_dict(self) -> dict:
         """Return the rescaler configuration as a Python dictionary""" 
         config = {
-            'original_voxel_size' : self.original_voxel_size,
-            'rescaled_voxel_size' : self.rescaled_voxel_size,
+            'original_voxel_sizes' : self.original_voxel_sizes,
+            'rescaled_voxel_sizes' : self.rescaled_voxel_sizes,
             'interpolation_order' : self.interpolation_order,
             'mode' : self.mode
         }
